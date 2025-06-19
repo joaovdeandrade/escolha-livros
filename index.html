@@ -1,682 +1,666 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="pt-BR" id="html-lang">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2665.8">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Importando a fonte Noto Sans do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Incluindo a biblioteca jsPDF para exportação de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title data-translate-key="page_title">Guia Interativo para Avaliação de Livros</title>
+    <style>
+        :root {
+            --primary-color: #4a69bd;
+            --secondary-color: #1e3799;
+            --accent-color: #f6b93b;
+            --text-color: #333;
+            --light-gray: #f8f9fa;
+            --white: #fff;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Usando a fonte Noto Sans */
+            font-family: 'Noto Sans', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            /* O fundo agora é definido dinamicamente via JavaScript com cores sólidas */
+            transition: background-color 0.5s ease;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--white);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: var(--white);
+            padding: 25px 25px 15px 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .lang-switcher {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: 1px solid var(--white);
+            color: var(--white);
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            opacity: 0.7;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+        .lang-btn:hover { opacity: 1; }
+        .lang-btn.active { background-color: rgba(255,255,255,0.3); opacity: 1; }
+
+        .header h1 {
+            font-size: 2em;
+            margin: 0;
+        }
+
+        .sub-header {
+            background-color: rgba(0,0,0,0.1);
+            color: var(--white);
+            padding: 8px 20px;
+            text-align: center;
+            font-size: 0.8em;
+        }
+
+        .screen {
+            padding: 30px 40px;
+            display: none; /* All screens hidden by default */
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* --- Setup Screen --- */
+        #setup-screen h2 {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #setup-context {
+            font-size: 0.9em;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        .start-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .start-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        /* --- Evaluation Screen --- */
+        #progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 10px;
+            background-color: var(--accent-color);
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+        #question-container {
+            min-height: 350px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: var(--light-gray);
+        }
+        .criterion-title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: var(--secondary-color); }
+        .essential-marker {
+            cursor: help;
+            position: relative;
+            margin-left: 5px;
+        }
+        .essential-marker .tooltip {
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: normal;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 10;
+        }
+        .essential-marker:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .guiding-questions ul { list-style-type: '– '; padding-left: 20px; color: #555; margin-bottom: 20px; }
+        .evaluation-area { margin-bottom: 15px; display:flex; justify-content:center; gap: 20px;}
+        .evaluation-area label { cursor: pointer; padding: 10px 25px; border-radius: 25px; border: 2px solid #ccc; transition: all 0.2s; font-weight: bold;}
+        .evaluation-area input[type="radio"] { display: none; }
+        .evaluation-area input[type="radio"]:checked + label.label-sim { background-color: var(--success); border-color: var(--success); color: var(--white); }
+        .evaluation-area input[type="radio"]:checked + label.label-nao { background-color: var(--danger); border-color: var(--danger); color: var(--white); }
+        #observation-textarea { width: 100%; min-height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; margin-top: 15px; }
+        .navigation-controls { display: flex; justify-content: space-between; align-items: center; }
+        .nav-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+        #prev-btn { background-color: #ddd; }
+        #prev-btn:disabled { background-color: #eee; cursor: not-allowed; }
+        #next-btn { background-color: var(--primary-color); color: var(--white); }
+        
+        /* --- Results Screen --- */
+        #results-screen h2 { text-align: center; color: var(--secondary-color); margin-bottom: 10px; }
+        #book-title-result { text-align: center; font-style: italic; color: #555; margin-bottom: 20px; }
+        .result-box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left-width: 7px; border-left-style: solid; }
+        .result-box h3 { margin-top: 0; margin-bottom: 10px; }
+        #score-box { border-color: var(--primary-color); background-color: #edf2ff; text-align: center; }
+        #score-display { font-size: 2.5em; font-weight: bold; color: var(--primary-color); }
+        #essential-warning { border-color: var(--danger); background-color: #f8d7da; color: #721c24; display: none; }
+        #recommendation.excellent { border-color: var(--success); background-color: #d4edda; color: #155724; }
+        #recommendation.good { border-color: var(--warning); background-color: #fff3cd; color: #856404; }
+        #recommendation.poor { border-color: var(--danger); background-color: #f8d7da; color: #721c24; }
+        .action-buttons { text-align: center; margin-top: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .action-btn { padding: 12px 25px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; border: none; transition: all 0.3s ease; }
+        #export-pdf-btn { background-color: var(--success); color: var(--white); }
+        #reset-btn { background-color: var(--danger); color: var(--white); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 0.9em;
+            background-color: var(--light-gray);
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+        }
+        .footer a {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="pt-BR" id="html-lang"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Importando a fonte Noto Sans do Google Fonts --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&amp;display=swap" rel="stylesheet"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Incluindo a biblioteca jsPDF para exportação de PDF --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;title data-translate-key="page_title"&gt;Guia Interativo para Avaliação de Livros&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>:root {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--primary-color: #4a69bd;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--secondary-color: #1e3799;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--accent-color: #f6b93b;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--text-color: #333;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--light-gray: #f8f9fa;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--white: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--success: #27ae60;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--warning: #f39c12;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>--danger: #e74c3c;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>* {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>box-sizing: border-box;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>/* Usando a fonte Noto Sans */</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-family: 'Noto Sans', sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>line-height: 1.6;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--text-color);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>/* O fundo agora é definido dinamicamente via JavaScript com cores sólidas */</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: background-color 0.5s ease;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>min-height: 100vh;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.container {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>max-width: 800px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background: var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 15px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>box-shadow: 0 20px 40px rgba(0,0,0,0.2);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>overflow: hidden;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>flex-direction: column;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.header {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 25px 25px 15px 25px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>position: relative;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.lang-switcher {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>top: 15px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>right: 15px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.lang-btn {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background: transparent;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 5px 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>opacity: 0.7;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: opacity 0.3s, background-color 0.3s;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.lang-btn:hover { opacity: 1; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.lang-btn.active { background-color: rgba(255,255,255,0.3); opacity: 1; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.header h1 {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 2em;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.sub-header {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: rgba(0,0,0,0.1);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 8px 20px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.8em;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.screen {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 30px 40px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: none; /* All screens hidden by default */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.screen.active {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: block;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>/* --- Setup Screen --- */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#setup-screen h2 {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--secondary-color);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#setup-context {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.9em;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 25px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: #555;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.form-group {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.form-group label {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: block;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.form-group input {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 12px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid #ccc;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1em;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.start-btn {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: block;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 15px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: var(--primary-color);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--white);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: none;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.2em;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: background-color 0.3s;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.start-btn:hover {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: var(--secondary-color);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>/* --- Evaluation Screen --- */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#progress-bar-container {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #e0e0e0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#progress-bar {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 0%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>height: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: var(--accent-color);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: width 0.4s ease;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#question-container {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>min-height: 350px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: 1px solid #eee;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: var(--light-gray);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.criterion-title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: var(--secondary-color); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.essential-marker {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>cursor: help;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>position: relative;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-left: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.essential-marker .tooltip {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>position: absolute;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>bottom: 120%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>left: 50%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transform: translateX(-50%);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #333;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: white;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 5px 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.8em;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-weight: normal;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>white-space: nowrap;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>opacity: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>visibility: hidden;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: opacity 0.2s, visibility 0.2s;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>z-index: 10;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.essential-marker:hover .tooltip {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>opacity: 1;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>visibility: visible;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.guiding-questions ul { list-style-type: '– '; padding-left: 20px; color: #555; margin-bottom: 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.evaluation-area { margin-bottom: 15px; display:flex; justify-content:center; gap: 20px;}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.evaluation-area label { cursor: pointer; padding: 10px 25px; border-radius: 25px; border: 2px solid #ccc; transition: all 0.2s; font-weight: bold;}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.evaluation-area input[type="radio"] { display: none; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.evaluation-area input[type="radio"]:checked + label.label-sim { background-color: var(--success); border-color: var(--success); color: var(--white); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.evaluation-area input[type="radio"]:checked + label.label-nao { background-color: var(--danger); border-color: var(--danger); color: var(--white); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#observation-textarea { width: 100%; min-height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; margin-top: 15px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.navigation-controls { display: flex; justify-content: space-between; align-items: center; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.nav-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#prev-btn { background-color: #ddd; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#prev-btn:disabled { background-color: #eee; cursor: not-allowed; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#next-btn { background-color: var(--primary-color); color: var(--white); }</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>/* --- Results Screen --- */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#results-screen h2 { text-align: center; color: var(--secondary-color); margin-bottom: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#book-title-result { text-align: center; font-style: italic; color: #555; margin-bottom: 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.result-box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left-width: 7px; border-left-style: solid; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.result-box h3 { margin-top: 0; margin-bottom: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#score-box { border-color: var(--primary-color); background-color: #edf2ff; text-align: center; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#score-display { font-size: 2.5em; font-weight: bold; color: var(--primary-color); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#essential-warning { border-color: var(--danger); background-color: #f8d7da; color: #721c24; display: none; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#recommendation.excellent { border-color: var(--success); background-color: #d4edda; color: #155724; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#recommendation.good { border-color: var(--warning); background-color: #fff3cd; color: #856404; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#recommendation.poor { border-color: var(--danger); background-color: #f8d7da; color: #721c24; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.action-buttons { text-align: center; margin-top: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.action-btn { padding: 12px 25px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; border: none; transition: all 0.3s ease; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#export-pdf-btn { background-color: var(--success); color: var(--white); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#reset-btn { background-color: var(--danger); color: var(--white); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>/* --- Footer --- */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.footer {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 20px 40px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.9em;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: var(--light-gray);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-top: 1px solid #e0e0e0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: #666;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.footer a {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: var(--primary-color);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-decoration: none;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.footer a:hover {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-decoration: underline;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;header class="header"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="lang-switcher"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button class="lang-btn active" id="lang-pt"&gt;PT&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button class="lang-btn" id="lang-en"&gt;EN&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h1 data-translate-key="header_title"&gt;Guia de Avaliação de Livros&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/header&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="sub-header"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p data-translate-key="sub_header_title"&gt;Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;!-- Screen 1: Setup --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="setup-screen" class="screen active"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2 data-translate-key="setup_title"&gt;Começar Avaliação&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p id="setup-context" data-translate-key="setup_context"&gt;Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="form-group"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="book-title-input" data-translate-key="book_title_label"&gt;Nome do Livro Didático&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input type="text" id="book-title-input" data-translate-key="book_title_placeholder" placeholder="Insira o nome do livro aqui..."&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="start-btn" class="start-btn" data-translate-key="start_btn"&gt;Iniciar Avaliação&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;!-- Screen 2: Evaluation --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="evaluation-screen" class="screen"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="progress-bar-container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div id="progress-bar"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="question-container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Question content will be injected here by JS --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="navigation-controls"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="prev-btn" class="nav-btn" data-translate-key="prev_btn"&gt;Anterior&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;span id="progress-text"&gt;&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="next-btn" class="nav-btn" data-translate-key="next_btn"&gt;Próximo&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;!-- Screen 3: Results --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="results-screen" class="screen"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2 data-translate-key="results_title"&gt;Resultados da Avaliação&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p id="book-title-result"&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="score-box" class="result-box"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;h3 data-translate-key="score_title"&gt;Pontuação Final&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div id="score-display"&gt;0 / 17&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="essential-warning" class="result-box"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="recommendation" class="result-box"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="action-buttons"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="export-pdf-btn" class="action-btn" data-translate-key="export_btn"&gt;Exportar para PDF&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="reset-btn" class="action-btn" data-translate-key="reset_btn"&gt;Nova Avaliação&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;footer class="footer"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p data-translate-key="footer_text"&gt;Desenvolvido por &lt;a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer"&gt;João Vicente Saliba de Andrade&lt;/a&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/footer&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>document.addEventListener('DOMContentLoaded', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- DYNAMIC BACKGROUND ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const backgrounds = [</p>
-<p class="p1"><span class="Apple-converted-space">            </span>'#a1c4fd', '#c2e9fb', '#ff9a9e', '#fecfef',</p>
-<p class="p1"><span class="Apple-converted-space">            </span>'#f6d365', '#fda085', '#43e97b', '#38f9d7',</p>
-<p class="p1"><span class="Apple-converted-space">            </span>'#667eea', '#764ba2', '#84fab0', '#8fd3f4'</p>
-<p class="p1"><span class="Apple-converted-space">        </span>];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.body.style.backgroundColor = randomBg;</p>
-<p class="p2"><br></p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- DATA ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const translations = {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>pt: {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>page_title: "Guia Interativo para Avaliação de Livros",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>header_title: "Guia de Avaliação de Livros",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>sub_header_title: "Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>setup_title: "Começar Avaliação",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>setup_context: "Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>book_title_label: "Nome do Livro Didático",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>book_title_placeholder: "Insira o nome do livro aqui...",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>start_btn: "Iniciar Avaliação",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>prev_btn: "Anterior",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>next_btn: "Próximo",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>finish_btn: "Ver Resultados",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>results_title: "Resultados da Avaliação",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>score_title: "Pontuação Final",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>export_btn: "Exportar para PDF",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>reset_btn: "Nova Avaliação",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>essential_marker: "Essencial",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>yes: "Sim",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>no: "Não",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>observations: "Observações",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>progress_text: "Questão {current} de {total}",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert_book_title: "Por favor, insira o nome do livro para começar.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert_answer_question: "Por favor, responda 'Sim' ou 'Não' para continuar.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>essential_warning_text: "&lt;strong&gt;ALERTA:&lt;/strong&gt; Respondeu 'Não' a um ou mais critérios essenciais. O material apresenta falhas estruturais graves.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_excellent: "&lt;h3&gt;✅ DECISÃO: ADOTAR&lt;/h3&gt;&lt;p&gt;O livro está fortemente alinhado com os princípios comunicativos. Constitui uma base sólida para o curso.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_good: "&lt;h3&gt;⚠️ DECISÃO: ADOTAR COM ADAPTAÇÕES&lt;/h3&gt;&lt;p&gt;O livro apresenta um alinhamento razoável, mas possui lacunas. O professor deverá estar preparado para suplementar as áreas deficientes.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_poor: "&lt;h3&gt;❌ DECISÃO: REJEITAR&lt;/h3&gt;&lt;p&gt;O livro está fracamente alinhado com os princípios comunicativos. O esforço para adaptar seria maior do que procurar uma alternativa.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_report_title: "Relatório de Avaliação de Livro Didático",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_book_evaluated: "Livro Avaliado",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_criterion: "Critério",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_answer: "Resposta",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_observations: "Observações",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_final_result: "Resultado Final",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_recommendation: "Recomendação",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>footer_text: `Desenvolvido por &lt;a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer"&gt;João Vicente Saliba de Andrade&lt;/a&gt;`</p>
-<p class="p1"><span class="Apple-converted-space">            </span>},</p>
-<p class="p1"><span class="Apple-converted-space">            </span>en: {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>page_title: "Interactive Textbook Evaluation Guide",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>header_title: "Textbook Evaluation Guide",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>sub_header_title: "A tool adapted from a Graduation Thesis (English Major, IFB)",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>setup_title: "Start Evaluation",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>setup_context: "This interactive guide is designed to help teachers make informed choices about educational materials, based on solid pedagogical criteria.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>book_title_label: "Textbook Title",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>book_title_placeholder: "Enter the textbook title here...",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>start_btn: "Start Evaluation",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>prev_btn: "Previous",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>next_btn: "Next",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>finish_btn: "See Results",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>results_title: "Evaluation Results",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>score_title: "Final Score",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>export_btn: "Export to PDF",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>reset_btn: "New Evaluation",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>essential_marker: "Essential",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>yes: "Yes",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>no: "No",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>observations: "Observations",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>progress_text: "Question {current} of {total}",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert_book_title: "Please enter the book title to start.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert_answer_question: "Please answer 'Yes' or 'No' to continue.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>essential_warning_text: "&lt;strong&gt;WARNING:&lt;/strong&gt; You answered 'No' to one or more essential criteria. The material has serious structural flaws.",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_excellent: "&lt;h3&gt;✅ DECISION: ADOPT&lt;/h3&gt;&lt;p&gt;The textbook is strongly aligned with communicative principles. It provides a solid foundation for the course.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_good: "&lt;h3&gt;⚠️ DECISION: ADOPT WITH ADAPTATIONS&lt;/h3&gt;&lt;p&gt;The textbook shows reasonable alignment but has gaps. The teacher should be prepared to supplement deficient areas.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recommendation_poor: "&lt;h3&gt;❌ DECISION: REJECT&lt;/h3&gt;&lt;p&gt;The textbook is weakly aligned with communicative principles. The effort to adapt it would be greater than finding a more suitable alternative.&lt;/p&gt;",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_report_title: "Textbook Evaluation Report",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_book_evaluated: "Textbook Evaluated",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_criterion: "Criterion",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_answer: "Answer",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_observations: "Observations",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_final_result: "Final Result",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>pdf_recommendation: "Recommendation",</p>
-<p class="p1"><span class="Apple-converted-space">                </span>footer_text: `Developed by &lt;a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer"&gt;João Vicente Saliba de Andrade&lt;/a&gt;`</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const questionsData = [</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 1, essential: true, pt: { title: "Coerência com a Abordagem Comunicativa (AC)", items: ["Os objetivos do livro são comunicativos?", "A metodologia prioriza o uso da língua para comunicar?", "O material promove uma versão 'forte' da AC, onde se aprende comunicando?"] }, en: { title: "Coherence with the Communicative Approach (CA)", items: ["Are the book's objectives communicative?", "Does the methodology prioritize language use for communication?", "Does the material promote a 'strong' version of CA, where learning happens by communicating?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 2, essential: true, pt: { title: "Alinhamento com o QECR", items: ["O livro indica claramente o nível de proficiência do QECR?", "As atividades são consistentes com os descritores 'posso fazer' (can-do statements)?"] }, en: { title: "Alignment with CEFR", items: ["Does the book clearly indicate the CEFR proficiency level?", "Are activities consistent with the 'can-do statements' for the level?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 3, essential: false, pt: { title: "Adequação ao Contexto de Ensino", items: ["O material é adequado à faixa etária, interesses e necessidades dos alunos?", "Os objetivos do livro alinham-se com os do seu curso?"] }, en: { title: "Suitability for Teaching Context", items: ["Is the material appropriate for the students' age, interests, and needs?", "Do the book's objectives align with your course goals?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 4, essential: false, pt: { title: "Competência Gramatical/Linguística", items: ["A gramática e o vocabulário são apresentados em contextos significativos?", "Há um equilíbrio entre apresentação, prática controlada e uso livre?"] }, en: { title: "Grammatical/Linguistic Competence", items: ["Are grammar and vocabulary presented in meaningful contexts?", "Is there a balance between presentation, controlled practice, and free use?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 5, essential: false, pt: { title: "Competência Sociolinguística/Interacional", items: ["O material expõe os alunos a diferentes registos de formalidade?", "As atividades requerem escolhas linguísticas apropriadas ao contexto social?"] }, en: { title: "Sociolinguistic/Interactional Competence", items: ["Does the material expose students to different registers of formality?", "Do activities require sociolinguistically appropriate choices?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 6, essential: false, pt: { title: "Competência Discursiva", items: ["O livro ajuda os alunos a produzirem textos coesos e coerentes?", "São trabalhados diferentes géneros textuais?"] }, en: { title: "Discourse Competence", items: ["Does the book help students produce cohesive and coherent texts?", "Are different text genres addressed?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 7, essential: false, pt: { title: "Competência Estratégica", items: ["O material ensina estratégias para lidar com falhas na comunicação?"] }, en: { title: "Strategic Competence", items: ["Does the material teach strategies for dealing with communication breakdowns?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 8, essential: true, pt: { title: "Tipologia e Qualidade das Tarefas", items: ["As atividades são tarefas com um propósito comunicativo claro?", "As tarefas são centradas no aluno e focadas no significado?"] }, en: { title: "Task Type and Quality", items: ["Are activities tasks with a clear communicative purpose?", "Are tasks student-centered and meaning-focused?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 9, essential: true, pt: { title: "Autenticidade", items: ["O livro utiliza textos autênticos ou semi-autênticos?", "As tarefas replicam o uso real da língua?"] }, en: { title: "Authenticity", items: ["Does the book use authentic or semi-authentic texts?", "Do tasks replicate real-life language use?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 10, essential: true, pt: { title: "Padrões de Interação", items: ["O material promove ativamente o trabalho em pares e em grupos?", "As atividades incentivam a negociação de significado?"] }, en: { title: "Interaction Patterns", items: ["Does the material actively promote pair and group work?", "Do activities encourage negotiation of meaning?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 11, essential: false, pt: { title: "Equilíbrio entre Fluência e Precisão", items: ["Existem oportunidades para prática focada na fluência?", "Existem momentos para prática focada na correção gramatical?"] }, en: { title: "Balance between Fluency and Accuracy", items: ["Are there opportunities for fluency-focused practice?", "Are there moments for accuracy-focused practice?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 12, essential: false, pt: { title: "Relevância e Interesse dos Tópicos", items: ["Os temas são motivadores e relevantes para os alunos?", "Os tópicos geram discussão e comunicação genuína?"] }, en: { title: "Topic Relevance and Interest", items: ["Are the topics motivating and relevant for the students?", "Are topics likely to generate genuine discussion?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 13, essential: false, pt: { title: "Representação Cultural", items: ["A diversidade cultural do mundo anglófono é representada?", "O material evita estereótipos e promove a consciência intercultural?"] }, en: { title: "Cultural Representation", items: ["Is the cultural diversity of the English-speaking world represented?", "Does the material avoid stereotypes and promote intercultural awareness?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 14, essential: false, pt: { title: "Impacto Afetivo", items: ["O desenho e o tom do livro são apelativos e motivadores?", "O material parece capaz de construir a confiança dos alunos?"] }, en: { title: "Affective Impact", items: ["Are the book's design and tone appealing and motivating?", "Does the material seem likely to build student confidence?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 15, essential: false, pt: { title: "Leiaute e Desenho Visual", items: ["A organização das unidades é clara e lógica?", "O leiaute é limpo e fácil de navegar?"] }, en: { title: "Layout and Visual Design", items: ["Is the organization of units clear and logical?", "Is the layout clean and easy to navigate?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 16, essential: false, pt: { title: "Componentes de Suporte", items: ["O Livro do Professor é útil e completo?", "A qualidade dos recursos áudio/vídeo é boa?", "A plataforma digital (se houver) acrescenta valor?"] }, en: { title: "Support Components", items: ["Is the Teacher's Book useful and complete?", "Is the quality of audio/video resources good?", "Does the digital platform (if any) add value?"] } },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>{ id: 17, essential: false, pt: { title: "Viabilidade Prática", items: ["O custo do livro é acessível para os alunos?", "O material está facilmente disponível no mercado?"] }, en: { title: "Practical Viability", items: ["Is the book's cost affordable for students?", "Is the material easily available on the market?"] } }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- STATE ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let currentLanguage = 'pt';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let currentQuestionIndex = 0;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let bookTitle = '';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let answers = new Array(questionsData.length).fill(null).map(() =&gt; ({ answer: null, observation: '' }));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- DOM ELEMENTS ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const screens = document.querySelectorAll('.screen');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const setupScreen = document.getElementById('setup-screen');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const evaluationScreen = document.getElementById('evaluation-screen');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const resultsScreen = document.getElementById('results-screen');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const startBtn = document.getElementById('start-btn');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const bookTitleInput = document.getElementById('book-title-input');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const prevBtn = document.getElementById('prev-btn');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const nextBtn = document.getElementById('next-btn');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const questionContainer = document.getElementById('question-container');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const progressBar = document.getElementById('progress-bar');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const progressText = document.getElementById('progress-text');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const resetBtn = document.getElementById('reset-btn');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const exportPdfBtn = document.getElementById('export-pdf-btn');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const langPtBtn = document.getElementById('lang-pt');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const langEnBtn = document.getElementById('lang-en');</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- FUNCTIONS ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const updateUIStrings = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.querySelectorAll('[data-translate-key]').forEach(el =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const key = el.getAttribute('data-translate-key');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (translations[currentLanguage][key]) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>if (el.tagName === 'INPUT' &amp;&amp; el.placeholder) {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>el.placeholder = translations[currentLanguage][key];</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>el.innerHTML = translations[currentLanguage][key];</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('html-lang').lang = currentLanguage;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const switchLanguage = (lang) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>currentLanguage = lang;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>langPtBtn.classList.toggle('active', lang === 'pt');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>langEnBtn.classList.toggle('active', lang === 'en');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>updateUIStrings();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (evaluationScreen.classList.contains('active')) renderQuestion(currentQuestionIndex);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (resultsScreen.classList.contains('active')) showResults();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const navigateToScreen = (screenId) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>screens.forEach(s =&gt; s.classList.remove('active'));</p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById(screenId).classList.add('active');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const startEvaluation = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>bookTitle = bookTitleInput.value.trim();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!bookTitle) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert(translations[currentLanguage].alert_book_title);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>navigateToScreen('evaluation-screen');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>renderQuestion(currentQuestionIndex);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const saveCurrentAnswer = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">             </span>if (!evaluationScreen.classList.contains('active')) return;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const selectedRadio = questionContainer.querySelector('input[name="answer"]:checked');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const observation = questionContainer.querySelector('#observation-textarea').value;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>answers[currentQuestionIndex] = {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>answer: selectedRadio ? selectedRadio.value : null,</p>
-<p class="p1"><span class="Apple-converted-space">                </span>observation: observation</p>
-<p class="p1"><span class="Apple-converted-space">            </span>};</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const renderQuestion = (index) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const question = questionsData[index];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const langData = question[currentLanguage];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const savedAnswer = answers[index];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>const essentialMarkerHTML = question.essential<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>? `&lt;span class="essential-marker"&gt;⭐&lt;span class="tooltip"&gt;${translations[currentLanguage].essential_marker}&lt;/span&gt;&lt;/span&gt;`<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>: '';</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>let questionHTML = `</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="criterion-title"&gt;${question.id}. ${langData.title} ${essentialMarkerHTML}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="guiding-questions"&gt;&lt;ul&gt;${langData.items.map(item =&gt; `&lt;li&gt;${item}&lt;/li&gt;`).join('')}&lt;/ul&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="evaluation-area"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="radio" id="q-yes" name="answer" value="yes" ${savedAnswer.answer === 'yes' ? 'checked' : ''}&gt;&lt;label for="q-yes" class="label-sim"&gt;${translations[currentLanguage].yes}&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="radio" id="q-no" name="answer" value="no" ${savedAnswer.answer === 'no' ? 'checked' : ''}&gt;&lt;label for="q-no" class="label-nao"&gt;${translations[currentLanguage].no}&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;textarea id="observation-textarea" placeholder="${translations[currentLanguage].observations}..."&gt;${savedAnswer.observation}&lt;/textarea&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>`;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>questionContainer.innerHTML = questionHTML;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>updateNavigation(index);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const updateNavigation = (index) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>progressBar.style.width = `${((index + 1) / questionsData.length) * 100}%`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>progressText.textContent = translations[currentLanguage].progress_text.replace('{current}', index + 1).replace('{total}', questionsData.length);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>prevBtn.disabled = index === 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>nextBtn.innerHTML = (index === questionsData.length - 1) ? translations[currentLanguage].finish_btn : translations[currentLanguage].next_btn;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const handleNavigation = (direction) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const currentAnswer = questionContainer.querySelector('input[name="answer"]:checked');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!currentAnswer) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert(translations[currentLanguage].alert_answer_question);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>saveCurrentAnswer();</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (direction === 'next') {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (currentQuestionIndex &lt; questionsData.length - 1) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>currentQuestionIndex++;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>renderQuestion(currentQuestionIndex);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>showResults();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else if (direction === 'prev') {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (currentQuestionIndex &gt; 0) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>currentQuestionIndex--;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>renderQuestion(currentQuestionIndex);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const showResults = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>navigateToScreen('results-screen');</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>let score = 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let essentialFail = false;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>answers.forEach((ans, i) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (ans.answer === 'yes') score++;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (questionsData[i].essential &amp;&amp; ans.answer === 'no') essentialFail = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('book-title-result').textContent = bookTitle;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('score-display').textContent = `${score} / ${questionsData.length}`;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>const warningDiv = document.getElementById('essential-warning');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (essentialFail) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>warningDiv.innerHTML = translations[currentLanguage].essential_warning_text;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>warningDiv.style.display = 'block';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>warningDiv.style.display = 'none';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>const recDiv = document.getElementById('recommendation');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (score &gt;= 14 &amp;&amp; !essentialFail) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.className = 'result-box excellent';</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.innerHTML = translations[currentLanguage].recommendation_excellent;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else if (score &gt;= 10) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.className = 'result-box good';</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.innerHTML = translations[currentLanguage].recommendation_good;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.className = 'result-box poor';</p>
-<p class="p1"><span class="Apple-converted-space">                </span>recDiv.innerHTML = translations[currentLanguage].recommendation_poor;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const exportToPDF = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const { jsPDF } = window.jspdf;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const doc = new jsPDF();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const T = translations[currentLanguage];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let y = 20;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFontSize(18);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(T.pdf_report_title, 105, y, { align: 'center' });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>y += 10;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFontSize(12);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFont(undefined, 'bold');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(`${T.pdf_book_evaluated}:`, 15, y);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFont(undefined, 'normal');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(bookTitle, 55, y);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>y += 15;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>const checkY = () =&gt; { if (y &gt; 280) { doc.addPage(); y = 20; } };</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>questionsData.forEach((q, i) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const ans = answers[i];</p>
-<p class="p1"><span class="Apple-converted-space">                </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.setFont(undefined, 'bold');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.text(`${T.pdf_criterion} ${q.id}: ${q[currentLanguage].title} ${q.essential ? '(*)' : ''}`, 15, y);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>y += 7;</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.setFont(undefined, 'normal');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.text(`${T.pdf_answer}: ${ans.answer === 'yes' ? T.yes : T.no}`, 20, y);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>y += 7;</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.text(`${T.pdf_observations}:`, 20, y);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const obsText = doc.splitTextToSize(ans.observation || '-', 165);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>doc.text(obsText, 25, y + 5);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>y += (obsText.length * 5) + 8;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFontSize(16);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(T.pdf_final_result, 105, y, { align: 'center' });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>y += 10;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>const scoreText = document.getElementById('score-display').textContent;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const recHTML = document.getElementById('recommendation').innerHTML;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const tempDiv = document.createElement('div');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>tempDiv.innerHTML = recHTML;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const recText = tempDiv.innerText;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.setFontSize(12);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(`${T.score_title}: ${scoreText}`, 15, y);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>y += 7;</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>checkY();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(`${T.pdf_recommendation}:`, 15, y);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const recLines = doc.splitTextToSize(recText, 170);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.text(recLines, 20, y + 5);</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>doc.save(`${bookTitle.replace(/ /g, '_')}_evaluation.pdf`);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const resetEvaluation = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>currentQuestionIndex = 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>bookTitle = '';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>bookTitleInput.value = '';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>answers = new Array(questionsData.length).fill(null).map(() =&gt; ({ answer: null, observation: '' }));</p>
-<p class="p1"><span class="Apple-converted-space">            </span>navigateToScreen('setup-screen');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- EVENT LISTENERS ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>startBtn.addEventListener('click', startEvaluation);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>prevBtn.addEventListener('click', () =&gt; handleNavigation('prev'));</p>
-<p class="p1"><span class="Apple-converted-space">        </span>nextBtn.addEventListener('click', () =&gt; handleNavigation('next'));</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resetBtn.addEventListener('click', resetEvaluation);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>exportPdfBtn.addEventListener('click', exportToPDF);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>langPtBtn.addEventListener('click', () =&gt; switchLanguage('pt'));</p>
-<p class="p1"><span class="Apple-converted-space">        </span>langEnBtn.addEventListener('click', () =&gt; switchLanguage('en'));</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.addEventListener('change', (e) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (e.target.matches('input[name="answer"]')) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>saveCurrentAnswer();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- INITIALIZATION ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateUIStrings();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+    <div class="container">
+        <header class="header">
+            <div class="lang-switcher">
+                <button class="lang-btn active" id="lang-pt">PT</button>
+                <button class="lang-btn" id="lang-en">EN</button>
+            </div>
+            <h1 data-translate-key="header_title">Guia de Avaliação de Livros</h1>
+        </header>
+        <div class="sub-header">
+            <p data-translate-key="sub_header_title">Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)</p>
+        </div>
+
+        <!-- Screen 1: Setup -->
+        <div id="setup-screen" class="screen active">
+            <h2 data-translate-key="setup_title">Começar Avaliação</h2>
+            <p id="setup-context" data-translate-key="setup_context">Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.</p>
+            <div class="form-group">
+                <label for="book-title-input" data-translate-key="book_title_label">Nome do Livro Didático</label>
+                <input type="text" id="book-title-input" data-translate-key="book_title_placeholder" placeholder="Insira o nome do livro aqui...">
+            </div>
+            <button id="start-btn" class="start-btn" data-translate-key="start_btn">Iniciar Avaliação</button>
+        </div>
+
+        <!-- Screen 2: Evaluation -->
+        <div id="evaluation-screen" class="screen">
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="question-container">
+                <!-- Question content will be injected here by JS -->
+            </div>
+            <div class="navigation-controls">
+                <button id="prev-btn" class="nav-btn" data-translate-key="prev_btn">Anterior</button>
+                <span id="progress-text"></span>
+                <button id="next-btn" class="nav-btn" data-translate-key="next_btn">Próximo</button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Results -->
+        <div id="results-screen" class="screen">
+            <h2 data-translate-key="results_title">Resultados da Avaliação</h2>
+            <p id="book-title-result"></p>
+            <div id="score-box" class="result-box">
+                <h3 data-translate-key="score_title">Pontuação Final</h3>
+                <div id="score-display">0 / 17</div>
+            </div>
+            <div id="essential-warning" class="result-box"></div>
+            <div id="recommendation" class="result-box"></div>
+            <div class="action-buttons">
+                <button id="export-pdf-btn" class="action-btn" data-translate-key="export_btn">Exportar para PDF</button>
+                <button id="reset-btn" class="action-btn" data-translate-key="reset_btn">Nova Avaliação</button>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p data-translate-key="footer_text">Desenvolvido por <a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer">João Vicente Saliba de Andrade</a></p>
+        </footer>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DYNAMIC BACKGROUND ---
+        const backgrounds = [
+            '#a1c4fd', '#c2e9fb', '#ff9a9e', '#fecfef',
+            '#f6d365', '#fda085', '#43e97b', '#38f9d7',
+            '#667eea', '#764ba2', '#84fab0', '#8fd3f4'
+        ];
+        const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+        document.body.style.backgroundColor = randomBg;
+
+
+        // --- DATA ---
+        const translations = {
+            pt: {
+                page_title: "Guia Interativo para Avaliação de Livros",
+                header_title: "Guia de Avaliação de Livros",
+                sub_header_title: "Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)",
+                setup_title: "Começar Avaliação",
+                setup_context: "Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.",
+                book_title_label: "Nome do Livro Didático",
+                book_title_placeholder: "Insira o nome do livro aqui...",
+                start_btn: "Iniciar Avaliação",
+                prev_btn: "Anterior",
+                next_btn: "Próximo",
+                finish_btn: "Ver Resultados",
+                results_title: "Resultados da Avaliação",
+                score_title: "Pontuação Final",
+                export_btn: "Exportar para PDF",
+                reset_btn: "Nova Avaliação",
+                essential_marker: "Essencial",
+                yes: "Sim",
+                no: "Não",
+                observations: "Observações",
+                progress_text: "Questão {current} de {total}",
+                alert_book_title: "Por favor, insira o nome do livro para começar.",
+                alert_answer_question: "Por favor, responda 'Sim' ou 'Não' para continuar.",
+                essential_warning_text: "<strong>ALERTA:</strong> Respondeu 'Não' a um ou mais critérios essenciais. O material apresenta falhas estruturais graves.",
+                recommendation_excellent: "<h3>✅ DECISÃO: ADOTAR</h3><p>O livro está fortemente alinhado com os princípios comunicativos. Constitui uma base sólida para o curso.</p>",
+                recommendation_good: "<h3>⚠️ DECISÃO: ADOTAR COM ADAPTAÇÕES</h3><p>O livro apresenta um alinhamento razoável, mas possui lacunas. O professor deverá estar preparado para suplementar as áreas deficientes.</p>",
+                recommendation_poor: "<h3>❌ DECISÃO: REJEITAR</h3><p>O livro está fracamente alinhado com os princípios comunicativos. O esforço para adaptar seria maior do que procurar uma alternativa.</p>",
+                pdf_report_title: "Relatório de Avaliação de Livro Didático",
+                pdf_book_evaluated: "Livro Avaliado",
+                pdf_criterion: "Critério",
+                pdf_answer: "Resposta",
+                pdf_observations: "Observações",
+                pdf_final_result: "Resultado Final",
+                pdf_recommendation: "Recomendação",
+                footer_text: `Desenvolvido por <a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer">João Vicente Saliba de Andrade</a>`
+            },
+            en: {
+                page_title: "Interactive Textbook Evaluation Guide",
+                header_title: "Textbook Evaluation Guide",
+                sub_header_title: "A tool adapted from a Graduation Thesis (English Major, IFB)",
+                setup_title: "Start Evaluation",
+                setup_context: "This interactive guide is designed to help teachers make informed choices about educational materials, based on solid pedagogical criteria.",
+                book_title_label: "Textbook Title",
+                book_title_placeholder: "Enter the textbook title here...",
+                start_btn: "Start Evaluation",
+                prev_btn: "Previous",
+                next_btn: "Next",
+                finish_btn: "See Results",
+                results_title: "Evaluation Results",
+                score_title: "Final Score",
+                export_btn: "Export to PDF",
+                reset_btn: "New Evaluation",
+                essential_marker: "Essential",
+                yes: "Yes",
+                no: "No",
+                observations: "Observations",
+                progress_text: "Question {current} of {total}",
+                alert_book_title: "Please enter the book title to start.",
+                alert_answer_question: "Please answer 'Yes' or 'No' to continue.",
+                essential_warning_text: "<strong>WARNING:</strong> You answered 'No' to one or more essential criteria. The material has serious structural flaws.",
+                recommendation_excellent: "<h3>✅ DECISION: ADOPT</h3><p>The textbook is strongly aligned with communicative principles. It provides a solid foundation for the course.</p>",
+                recommendation_good: "<h3>⚠️ DECISION: ADOPT WITH ADAPTATIONS</h3><p>The textbook shows reasonable alignment but has gaps. The teacher should be prepared to supplement deficient areas.</p>",
+                recommendation_poor: "<h3>❌ DECISION: REJECT</h3><p>The textbook is weakly aligned with communicative principles. The effort to adapt it would be greater than finding a more suitable alternative.</p>",
+                pdf_report_title: "Textbook Evaluation Report",
+                pdf_book_evaluated: "Textbook Evaluated",
+                pdf_criterion: "Criterion",
+                pdf_answer: "Answer",
+                pdf_observations: "Observations",
+                pdf_final_result: "Final Result",
+                pdf_recommendation: "Recommendation",
+                footer_text: `Developed by <a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer">João Vicente Saliba de Andrade</a>`
+            }
+        };
+
+        const questionsData = [
+            { id: 1, essential: true, pt: { title: "Coerência com a Abordagem Comunicativa (AC)", items: ["Os objetivos do livro são comunicativos?", "A metodologia prioriza o uso da língua para comunicar?", "O material promove uma versão 'forte' da AC, onde se aprende comunicando?"] }, en: { title: "Coherence with the Communicative Approach (CA)", items: ["Are the book's objectives communicative?", "Does the methodology prioritize language use for communication?", "Does the material promote a 'strong' version of CA, where learning happens by communicating?"] } },
+            { id: 2, essential: true, pt: { title: "Alinhamento com o QECR", items: ["O livro indica claramente o nível de proficiência do QECR?", "As atividades são consistentes com os descritores 'posso fazer' (can-do statements)?"] }, en: { title: "Alignment with CEFR", items: ["Does the book clearly indicate the CEFR proficiency level?", "Are activities consistent with the 'can-do statements' for the level?"] } },
+            { id: 3, essential: false, pt: { title: "Adequação ao Contexto de Ensino", items: ["O material é adequado à faixa etária, interesses e necessidades dos alunos?", "Os objetivos do livro alinham-se com os do seu curso?"] }, en: { title: "Suitability for Teaching Context", items: ["Is the material appropriate for the students' age, interests, and needs?", "Do the book's objectives align with your course goals?"] } },
+            { id: 4, essential: false, pt: { title: "Competência Gramatical/Linguística", items: ["A gramática e o vocabulário são apresentados em contextos significativos?", "Há um equilíbrio entre apresentação, prática controlada e uso livre?"] }, en: { title: "Grammatical/Linguistic Competence", items: ["Are grammar and vocabulary presented in meaningful contexts?", "Is there a balance between presentation, controlled practice, and free use?"] } },
+            { id: 5, essential: false, pt: { title: "Competência Sociolinguística/Interacional", items: ["O material expõe os alunos a diferentes registos de formalidade?", "As atividades requerem escolhas linguísticas apropriadas ao contexto social?"] }, en: { title: "Sociolinguistic/Interactional Competence", items: ["Does the material expose students to different registers of formality?", "Do activities require sociolinguistically appropriate choices?"] } },
+            { id: 6, essential: false, pt: { title: "Competência Discursiva", items: ["O livro ajuda os alunos a produzirem textos coesos e coerentes?", "São trabalhados diferentes géneros textuais?"] }, en: { title: "Discourse Competence", items: ["Does the book help students produce cohesive and coherent texts?", "Are different text genres addressed?"] } },
+            { id: 7, essential: false, pt: { title: "Competência Estratégica", items: ["O material ensina estratégias para lidar com falhas na comunicação?"] }, en: { title: "Strategic Competence", items: ["Does the material teach strategies for dealing with communication breakdowns?"] } },
+            { id: 8, essential: true, pt: { title: "Tipologia e Qualidade das Tarefas", items: ["As atividades são tarefas com um propósito comunicativo claro?", "As tarefas são centradas no aluno e focadas no significado?"] }, en: { title: "Task Type and Quality", items: ["Are activities tasks with a clear communicative purpose?", "Are tasks student-centered and meaning-focused?"] } },
+            { id: 9, essential: true, pt: { title: "Autenticidade", items: ["O livro utiliza textos autênticos ou semi-autênticos?", "As tarefas replicam o uso real da língua?"] }, en: { title: "Authenticity", items: ["Does the book use authentic or semi-authentic texts?", "Do tasks replicate real-life language use?"] } },
+            { id: 10, essential: true, pt: { title: "Padrões de Interação", items: ["O material promove ativamente o trabalho em pares e em grupos?", "As atividades incentivam a negociação de significado?"] }, en: { title: "Interaction Patterns", items: ["Does the material actively promote pair and group work?", "Do activities encourage negotiation of meaning?"] } },
+            { id: 11, essential: false, pt: { title: "Equilíbrio entre Fluência e Precisão", items: ["Existem oportunidades para prática focada na fluência?", "Existem momentos para prática focada na correção gramatical?"] }, en: { title: "Balance between Fluency and Accuracy", items: ["Are there opportunities for fluency-focused practice?", "Are there moments for accuracy-focused practice?"] } },
+            { id: 12, essential: false, pt: { title: "Relevância e Interesse dos Tópicos", items: ["Os temas são motivadores e relevantes para os alunos?", "Os tópicos geram discussão e comunicação genuína?"] }, en: { title: "Topic Relevance and Interest", items: ["Are the topics motivating and relevant for the students?", "Are topics likely to generate genuine discussion?"] } },
+            { id: 13, essential: false, pt: { title: "Representação Cultural", items: ["A diversidade cultural do mundo anglófono é representada?", "O material evita estereótipos e promove a consciência intercultural?"] }, en: { title: "Cultural Representation", items: ["Is the cultural diversity of the English-speaking world represented?", "Does the material avoid stereotypes and promote intercultural awareness?"] } },
+            { id: 14, essential: false, pt: { title: "Impacto Afetivo", items: ["O desenho e o tom do livro são apelativos e motivadores?", "O material parece capaz de construir a confiança dos alunos?"] }, en: { title: "Affective Impact", items: ["Are the book's design and tone appealing and motivating?", "Does the material seem likely to build student confidence?"] } },
+            { id: 15, essential: false, pt: { title: "Leiaute e Desenho Visual", items: ["A organização das unidades é clara e lógica?", "O leiaute é limpo e fácil de navegar?"] }, en: { title: "Layout and Visual Design", items: ["Is the organization of units clear and logical?", "Is the layout clean and easy to navigate?"] } },
+            { id: 16, essential: false, pt: { title: "Componentes de Suporte", items: ["O Livro do Professor é útil e completo?", "A qualidade dos recursos áudio/vídeo é boa?", "A plataforma digital (se houver) acrescenta valor?"] }, en: { title: "Support Components", items: ["Is the Teacher's Book useful and complete?", "Is the quality of audio/video resources good?", "Does the digital platform (if any) add value?"] } },
+            { id: 17, essential: false, pt: { title: "Viabilidade Prática", items: ["O custo do livro é acessível para os alunos?", "O material está facilmente disponível no mercado?"] }, en: { title: "Practical Viability", items: ["Is the book's cost affordable for students?", "Is the material easily available on the market?"] } }
+        ];
+
+        // --- STATE ---
+        let currentLanguage = 'pt';
+        let currentQuestionIndex = 0;
+        let bookTitle = '';
+        let answers = new Array(questionsData.length).fill(null).map(() => ({ answer: null, observation: '' }));
+
+        // --- DOM ELEMENTS ---
+        const screens = document.querySelectorAll('.screen');
+        const setupScreen = document.getElementById('setup-screen');
+        const evaluationScreen = document.getElementById('evaluation-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const startBtn = document.getElementById('start-btn');
+        const bookTitleInput = document.getElementById('book-title-input');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const questionContainer = document.getElementById('question-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const resetBtn = document.getElementById('reset-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const langPtBtn = document.getElementById('lang-pt');
+        const langEnBtn = document.getElementById('lang-en');
+
+        // --- FUNCTIONS ---
+        const updateUIStrings = () => {
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.getAttribute('data-translate-key');
+                if (translations[currentLanguage][key]) {
+                    if (el.tagName === 'INPUT' && el.placeholder) {
+                        el.placeholder = translations[currentLanguage][key];
+                    } else {
+                        el.innerHTML = translations[currentLanguage][key];
+                    }
+                }
+            });
+            document.getElementById('html-lang').lang = currentLanguage;
+        };
+        
+        const switchLanguage = (lang) => {
+            currentLanguage = lang;
+            langPtBtn.classList.toggle('active', lang === 'pt');
+            langEnBtn.classList.toggle('active', lang === 'en');
+            updateUIStrings();
+            if (evaluationScreen.classList.contains('active')) renderQuestion(currentQuestionIndex);
+            if (resultsScreen.classList.contains('active')) showResults();
+        };
+
+        const navigateToScreen = (screenId) => {
+            screens.forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        };
+
+        const startEvaluation = () => {
+            bookTitle = bookTitleInput.value.trim();
+            if (!bookTitle) {
+                alert(translations[currentLanguage].alert_book_title);
+                return;
+            }
+            navigateToScreen('evaluation-screen');
+            renderQuestion(currentQuestionIndex);
+        };
+
+        const saveCurrentAnswer = () => {
+             if (!evaluationScreen.classList.contains('active')) return;
+            const selectedRadio = questionContainer.querySelector('input[name="answer"]:checked');
+            const observation = questionContainer.querySelector('#observation-textarea').value;
+            answers[currentQuestionIndex] = {
+                answer: selectedRadio ? selectedRadio.value : null,
+                observation: observation
+            };
+        };
+        
+        const renderQuestion = (index) => {
+            const question = questionsData[index];
+            const langData = question[currentLanguage];
+            const savedAnswer = answers[index];
+
+            const essentialMarkerHTML = question.essential 
+                ? `<span class="essential-marker">⭐<span class="tooltip">${translations[currentLanguage].essential_marker}</span></span>` 
+                : '';
+
+            let questionHTML = `
+                <div class="criterion-title">${question.id}. ${langData.title} ${essentialMarkerHTML}</div>
+                <div class="guiding-questions"><ul>${langData.items.map(item => `<li>${item}</li>`).join('')}</ul></div>
+                <div class="evaluation-area">
+                    <input type="radio" id="q-yes" name="answer" value="yes" ${savedAnswer.answer === 'yes' ? 'checked' : ''}><label for="q-yes" class="label-sim">${translations[currentLanguage].yes}</label>
+                    <input type="radio" id="q-no" name="answer" value="no" ${savedAnswer.answer === 'no' ? 'checked' : ''}><label for="q-no" class="label-nao">${translations[currentLanguage].no}</label>
+                </div>
+                <textarea id="observation-textarea" placeholder="${translations[currentLanguage].observations}...">${savedAnswer.observation}</textarea>
+            `;
+            
+            questionContainer.innerHTML = questionHTML;
+            updateNavigation(index);
+        };
+        
+        const updateNavigation = (index) => {
+            progressBar.style.width = `${((index + 1) / questionsData.length) * 100}%`;
+            progressText.textContent = translations[currentLanguage].progress_text.replace('{current}', index + 1).replace('{total}', questionsData.length);
+            prevBtn.disabled = index === 0;
+            nextBtn.innerHTML = (index === questionsData.length - 1) ? translations[currentLanguage].finish_btn : translations[currentLanguage].next_btn;
+        };
+        
+        const handleNavigation = (direction) => {
+            const currentAnswer = questionContainer.querySelector('input[name="answer"]:checked');
+            if (!currentAnswer) {
+                alert(translations[currentLanguage].alert_answer_question);
+                return;
+            }
+            saveCurrentAnswer();
+            
+            if (direction === 'next') {
+                if (currentQuestionIndex < questionsData.length - 1) {
+                    currentQuestionIndex++;
+                    renderQuestion(currentQuestionIndex);
+                } else {
+                    showResults();
+                }
+            } else if (direction === 'prev') {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    renderQuestion(currentQuestionIndex);
+                }
+            }
+        };
+
+        const showResults = () => {
+            navigateToScreen('results-screen');
+            
+            let score = 0;
+            let essentialFail = false;
+            answers.forEach((ans, i) => {
+                if (ans.answer === 'yes') score++;
+                if (questionsData[i].essential && ans.answer === 'no') essentialFail = true;
+            });
+
+            document.getElementById('book-title-result').textContent = bookTitle;
+            document.getElementById('score-display').textContent = `${score} / ${questionsData.length}`;
+            
+            const warningDiv = document.getElementById('essential-warning');
+            if (essentialFail) {
+                warningDiv.innerHTML = translations[currentLanguage].essential_warning_text;
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.style.display = 'none';
+            }
+
+            const recDiv = document.getElementById('recommendation');
+            if (score >= 14 && !essentialFail) {
+                recDiv.className = 'result-box excellent';
+                recDiv.innerHTML = translations[currentLanguage].recommendation_excellent;
+            } else if (score >= 10) {
+                recDiv.className = 'result-box good';
+                recDiv.innerHTML = translations[currentLanguage].recommendation_good;
+            } else {
+                recDiv.className = 'result-box poor';
+                recDiv.innerHTML = translations[currentLanguage].recommendation_poor;
+            }
+        };
+        
+        const exportToPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const T = translations[currentLanguage];
+            let y = 20;
+
+            doc.setFontSize(18);
+            doc.text(T.pdf_report_title, 105, y, { align: 'center' });
+            y += 10;
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${T.pdf_book_evaluated}:`, 15, y);
+            doc.setFont(undefined, 'normal');
+            doc.text(bookTitle, 55, y);
+            y += 15;
+
+            const checkY = () => { if (y > 280) { doc.addPage(); y = 20; } };
+            
+            questionsData.forEach((q, i) => {
+                const ans = answers[i];
+                checkY();
+                doc.setFont(undefined, 'bold');
+                doc.text(`${T.pdf_criterion} ${q.id}: ${q[currentLanguage].title} ${q.essential ? '(*)' : ''}`, 15, y);
+                y += 7;
+                
+                doc.setFont(undefined, 'normal');
+                checkY();
+                doc.text(`${T.pdf_answer}: ${ans.answer === 'yes' ? T.yes : T.no}`, 20, y);
+                y += 7;
+                
+                checkY();
+                doc.text(`${T.pdf_observations}:`, 20, y);
+                const obsText = doc.splitTextToSize(ans.observation || '-', 165);
+                doc.text(obsText, 25, y + 5);
+                y += (obsText.length * 5) + 8;
+            });
+            
+            checkY();
+            doc.setFontSize(16);
+            doc.text(T.pdf_final_result, 105, y, { align: 'center' });
+            y += 10;
+            
+            const scoreText = document.getElementById('score-display').textContent;
+            const recHTML = document.getElementById('recommendation').innerHTML;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = recHTML;
+            const recText = tempDiv.innerText;
+            
+            checkY();
+            doc.setFontSize(12);
+            doc.text(`${T.score_title}: ${scoreText}`, 15, y);
+            y += 7;
+            
+            checkY();
+            doc.text(`${T.pdf_recommendation}:`, 15, y);
+            const recLines = doc.splitTextToSize(recText, 170);
+            doc.text(recLines, 20, y + 5);
+            
+            doc.save(`${bookTitle.replace(/ /g, '_')}_evaluation.pdf`);
+        };
+        
+        const resetEvaluation = () => {
+            currentQuestionIndex = 0;
+            bookTitle = '';
+            bookTitleInput.value = '';
+            answers = new Array(questionsData.length).fill(null).map(() => ({ answer: null, observation: '' }));
+            navigateToScreen('setup-screen');
+        };
+
+        // --- EVENT LISTENERS ---
+        startBtn.addEventListener('click', startEvaluation);
+        prevBtn.addEventListener('click', () => handleNavigation('prev'));
+        nextBtn.addEventListener('click', () => handleNavigation('next'));
+        resetBtn.addEventListener('click', resetEvaluation);
+        exportPdfBtn.addEventListener('click', exportToPDF);
+        langPtBtn.addEventListener('click', () => switchLanguage('pt'));
+        langEnBtn.addEventListener('click', () => switchLanguage('en'));
+        
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('input[name="answer"]')) {
+                saveCurrentAnswer();
+            }
+        });
+
+        // --- INITIALIZATION ---
+        updateUIStrings();
+    });
+    </script>
 </body>
 </html>
