@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <!-- Incluindo bibliotecas JS para PDF e Gráficos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <title data-translate-key="page_title">Plataforma de Avaliação de Livros</title>
     <style>
@@ -33,11 +32,11 @@
             color: var(--text-color);
             background-color: #ecf0f1;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
-            max-width: 950px; /* Aumentado para melhorar a legibilidade */
+            max-width: 950px;
             width: 100%;
             background: var(--white);
             border-radius: 15px;
@@ -56,9 +55,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
-        .main-header h1 { font-size: 1.5em; cursor: pointer; }
-        .lang-switcher { margin-left: auto; padding-right: 20px;}
+        .main-header h1 { font-size: 1.5em; cursor: pointer; margin-right: auto; }
+        .lang-switcher { display: flex; align-items: center; }
         .lang-btn { background: transparent; border: 1px solid var(--white); color: var(--white); padding: 5px 10px; cursor: pointer; border-radius: 5px; opacity: 0.7; }
         .lang-btn.active { background-color: rgba(255,255,255,0.3); }
 
@@ -67,12 +67,7 @@
         .screen-content { padding: 30px 40px; }
         
         /* --- TELA INICIAL (HOME) --- */
-        .thesis-header {
-            padding: 40px;
-            text-align: center;
-            background-color: var(--light-gray);
-            border-bottom: 1px solid #ddd;
-        }
+        .thesis-header { padding: 30px; text-align: center; background-color: var(--light-gray); border-bottom: 1px solid #ddd; }
         .thesis-header .institution { font-size: 1.1em; font-weight: bold; color: var(--primary-color); }
         .thesis-header .campus-course { font-size: 1em; color: #555; margin-bottom: 20px; }
         .thesis-header .author-name { font-size: 1.4em; font-weight: bold; color: var(--secondary-color); margin: 20px 0; text-transform: uppercase; }
@@ -167,8 +162,11 @@
 
         @media (max-width: 768px) {
             .results-grid { grid-template-columns: 1fr; }
-            .screen-content { padding: 20px; }
-            .main-header h1 { font-size: 1.2em; }
+            .screen-content { padding: 20px 15px; }
+            .main-header { flex-direction: column; gap: 10px; }
+            .main-header h1 { order: -1; }
+            .thesis-header { padding: 20px; }
+            .thesis-header h2 { font-size: 1.1em; }
             .steps-container { flex-direction: column; align-items: center; }
         }
     </style>
@@ -644,7 +642,7 @@
             obsList.innerHTML = '';
             currentEvaluation.observations.forEach((obs, index) => {
                 if(obs.trim() !== '') {
-                    obsList.innerHTML += `<div class="obs-item"><strong>${dimensionsData[index][currentLanguage]}:</strong><p>${obs}</p></div>`;
+                    obsList.innerHTML += `<div class="obs-item"><strong>${dimensionsData[index][currentLanguage]}:</strong><p>${obs.trim()}</p></div>`;
                 }
             });
 
@@ -682,7 +680,7 @@
                     }]
                 },
                 options: {
-                    scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100, pointLabels: { font: { size: 12 } } } },
+                    scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100, pointLabels: { font: { size: 14 } } } },
                     plugins: { legend: { display: false } }
                 }
             });
