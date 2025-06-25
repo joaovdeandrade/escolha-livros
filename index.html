@@ -7,14 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Incluindo a biblioteca jsPDF para exportação de PDF -->
+    <!-- Incluindo bibliotecas JS para PDF e Gráficos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <title data-translate-key="page_title">Guia Interativo para Avaliação de Livros</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <title data-translate-key="page_title">Plataforma de Avaliação de Livros</title>
     <style>
         :root {
-            --primary-color: #4a69bd;
-            --secondary-color: #1e3799;
-            --accent-color: #f6b93b;
+            --primary-color: #34495e;
+            --secondary-color: #2c3e50;
+            --accent-color: #3498db;
             --text-color: #333;
             --light-gray: #f8f9fa;
             --white: #fff;
@@ -23,281 +25,260 @@
             --danger: #e74c3c;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            /* Usando a fonte Noto Sans */
             font-family: 'Noto Sans', sans-serif;
             line-height: 1.6;
             color: var(--text-color);
-            /* O fundo agora é definido dinamicamente via JavaScript com cores sólidas */
-            transition: background-color 0.5s ease;
+            background-color: #ecf0f1;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 950px; /* Aumentado para melhorar a legibilidade */
             width: 100%;
             background: var(--white);
             border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
-            color: var(--white);
-            padding: 25px 25px 15px 25px;
-            text-align: center;
-            position: relative;
+            margin: 20px auto;
         }
         
-        .lang-switcher {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-        }
-
-        .lang-btn {
-            background: transparent;
-            border: 1px solid var(--white);
+        /* --- HEADER E NAVEGAÇÃO PRINCIPAL --- */
+        .main-header {
+            background: var(--secondary-color);
             color: var(--white);
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            opacity: 0.7;
-            transition: opacity 0.3s, background-color 0.3s;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .lang-btn:hover { opacity: 1; }
-        .lang-btn.active { background-color: rgba(255,255,255,0.3); opacity: 1; }
+        .main-header h1 { font-size: 1.5em; cursor: pointer; }
+        .lang-switcher { margin-left: auto; padding-right: 20px;}
+        .lang-btn { background: transparent; border: 1px solid var(--white); color: var(--white); padding: 5px 10px; cursor: pointer; border-radius: 5px; opacity: 0.7; }
+        .lang-btn.active { background-color: rgba(255,255,255,0.3); }
 
-        .header h1 {
-            font-size: 2em;
-            margin: 0;
-        }
-
-        .sub-header {
-            background-color: rgba(0,0,0,0.1);
-            color: var(--white);
-            padding: 8px 20px;
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .screen-content { padding: 30px 40px; }
+        
+        /* --- TELA INICIAL (HOME) --- */
+        .thesis-header {
+            padding: 40px;
             text-align: center;
-            font-size: 0.8em;
-        }
-
-        .screen {
-            padding: 30px 40px;
-            display: none; /* All screens hidden by default */
-        }
-        .screen.active {
-            display: block;
-        }
-
-        /* --- Setup Screen --- */
-        #setup-screen h2 {
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        #setup-context {
-            font-size: 0.9em;
-            text-align: center;
-            margin-bottom: 25px;
-            color: #555;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1em;
-        }
-        .start-btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: 8px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .start-btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        /* --- Evaluation Screen --- */
-        #progress-bar-container {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        #progress-bar {
-            width: 0%;
-            height: 10px;
-            background-color: var(--accent-color);
-            border-radius: 5px;
-            transition: width 0.4s ease;
-        }
-        #question-container {
-            min-height: 350px;
-            padding: 20px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            margin-bottom: 20px;
             background-color: var(--light-gray);
+            border-bottom: 1px solid #ddd;
         }
-        .criterion-title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: var(--secondary-color); }
-        .essential-marker {
-            cursor: help;
-            position: relative;
-            margin-left: 5px;
+        .thesis-header .institution { font-size: 1.1em; font-weight: bold; color: var(--primary-color); }
+        .thesis-header .campus-course { font-size: 1em; color: #555; margin-bottom: 20px; }
+        .thesis-header .author-name { font-size: 1.4em; font-weight: bold; color: var(--secondary-color); margin: 20px 0; text-transform: uppercase; }
+        .thesis-header .thesis-title { font-size: 1.2em; font-weight: bold; max-width: 600px; margin: 0 auto 10px auto; }
+        .thesis-header .thesis-subtitle { font-size: 1em; font-style: italic; color: #555; margin-bottom: 30px; }
+        .thesis-header .advisor { font-size: 0.9em; color: #666; }
+        #home-screen .start-section { text-align: center; padding: 40px 20px; }
+        #home-start-btn { padding: 15px 30px; font-size: 1.2em; font-weight: bold; color: var(--white); background-color: var(--success); border: none; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; }
+        #home-start-btn:hover { background-color: #219d52; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        #home-screen .instructions-section { padding: 40px 20px; }
+        #home-screen .instructions-section h3 { text-align: center; font-size: 1.8em; color: var(--secondary-color); margin-bottom: 30px; }
+        .steps-container { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+        .step { text-align: center; width: 200px; }
+        .step .step-number {
+            width: 60px;
+            height: 68px;
+            background-color: var(--accent-color);
+            color: var(--white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
         }
-        .essential-marker .tooltip {
-            position: absolute;
-            bottom: 120%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            font-weight: normal;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s, visibility 0.2s;
-            z-index: 10;
-        }
-        .essential-marker:hover .tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
+        .step .step-text { font-size: 1em; color: #555; min-height: 50px; }
 
-        .guiding-questions ul { list-style-type: '– '; padding-left: 20px; color: #555; margin-bottom: 20px; }
-        .evaluation-area { margin-bottom: 15px; display:flex; justify-content:center; gap: 20px;}
-        .evaluation-area label { cursor: pointer; padding: 10px 25px; border-radius: 25px; border: 2px solid #ccc; transition: all 0.2s; font-weight: bold;}
-        .evaluation-area input[type="radio"] { display: none; }
-        .evaluation-area input[type="radio"]:checked + label.label-sim { background-color: var(--success); border-color: var(--success); color: var(--white); }
-        .evaluation-area input[type="radio"]:checked + label.label-nao { background-color: var(--danger); border-color: var(--danger); color: var(--white); }
-        #observation-textarea { width: 100%; min-height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; margin-top: 15px; }
+
+        /* --- TELA DE INÍCIO (SETUP) --- */
+        #setup-screen h2 { color: var(--secondary-color); margin-bottom: 20px; text-align: center; }
+        .form-section { margin-bottom: 25px; border-left: 4px solid var(--accent-color); padding-left: 15px; }
+        .form-section h3 { margin-bottom: 15px; color: var(--primary-color); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        .form-group .optional-text { font-size: 0.8em; opacity: 0.7; font-weight: normal; margin-left: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; font-family: 'Noto Sans', sans-serif; }
+        textarea { resize: vertical; min-height: 80px; }
+        .start-btn { display: block; width: 100%; padding: 15px; background-color: var(--success); color: var(--white); border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+        .start-btn:hover { background-color: #219d52; }
+        
+        /* --- TELA DE AVALIAÇÃO --- */
+        #progress-bar-container { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-bottom: 20px; }
+        #progress-bar { width: 0%; height: 10px; background-color: var(--accent-color); border-radius: 5px; transition: width 0.4s ease; }
+        .dimension-container { min-height: 400px; padding: 20px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 20px; background-color: var(--light-gray); }
+        .dimension-title { font-size: 1.5em; font-weight: bold; margin-bottom: 25px; color: var(--secondary-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; }
+        .criterion-group { margin-bottom: 30px; }
+        .criterion-group-title { font-size: 1.2em; font-weight: bold; color: var(--primary-color); margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .checklist-item { margin-bottom: 20px; padding: 15px; border-radius: 5px; background-color: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .checklist-item p { margin-bottom: 10px; font-size: 1.05em; line-height: 1.5; }
+        .essential-marker { cursor: help; margin-left: 8px; color: var(--warning); font-weight: bold;}
+        .rating-area { display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
+        .rating-area span { font-size: 0.9em; opacity: 0.8; }
+        .rating-buttons { display: flex; gap: 5px; }
+        .rating-buttons label { cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ccc; font-weight: bold; transition: all 0.2s; }
+        .rating-buttons input[type="radio"] { display: none; }
+        .rating-buttons input[type="radio"]:checked + label { background-color: var(--accent-color); color: var(--white); border-color: var(--accent-color); transform: scale(1.1); }
+        #observation-section { margin-top: 30px; }
+        #observation-section label { font-weight: bold; color: var(--primary-color); }
+        #observation-textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; margin-top: 10px; }
         .navigation-controls { display: flex; justify-content: space-between; align-items: center; }
         .nav-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
         #prev-btn { background-color: #ddd; }
         #prev-btn:disabled { background-color: #eee; cursor: not-allowed; }
         #next-btn { background-color: var(--primary-color); color: var(--white); }
-        
-        /* --- Results Screen --- */
-        #results-screen h2 { text-align: center; color: var(--secondary-color); margin-bottom: 10px; }
-        #book-title-result { text-align: center; font-style: italic; color: #555; margin-bottom: 20px; }
-        .result-box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left-width: 7px; border-left-style: solid; }
-        .result-box h3 { margin-top: 0; margin-bottom: 10px; }
-        #score-box { border-color: var(--primary-color); background-color: #edf2ff; text-align: center; }
-        #score-display { font-size: 2.5em; font-weight: bold; color: var(--primary-color); }
-        #essential-warning { border-color: var(--danger); background-color: #f8d7da; color: #721c24; display: none; }
-        #recommendation.excellent { border-color: var(--success); background-color: #d4edda; color: #155724; }
-        #recommendation.good { border-color: var(--warning); background-color: #fff3cd; color: #856404; }
-        #recommendation.poor { border-color: var(--danger); background-color: #f8d7da; color: #721c24; }
+
+        /* --- TELA DE RESULTADOS --- */
+        #results-screen h2 { text-align: center; color: var(--secondary-color); margin-bottom: 20px; }
+        #book-title-result { text-align: center; font-weight: bold; font-size: 1.2em; color: var(--primary-color); margin-bottom: 20px; }
+        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: flex-start; }
+        #chart-container { max-width: 400px; margin: 0 auto; }
+        .scores-container .result-box { padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .scores-container h3 { margin: 0 0 10px 0; font-size: 1.1em; }
+        .dimension-score-bar { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-bottom: 5px; }
+        .dimension-score-bar div { height: 10px; background-color: var(--accent-color); border-radius: 5px; transition: width 0.5s; }
+        #essential-warning { background-color: #fbeae9; border-left: 5px solid var(--danger); color: var(--danger); display: none; font-weight: bold; }
+        #recommendation, #observations-summary { grid-column: 1 / -1; margin-top: 20px; padding: 20px; border-radius: 8px; }
+        #observations-summary { background-color: var(--light-gray); border-left: 5px solid #bdc3c7; }
+        #observations-summary h3 { color: var(--secondary-color); }
+        #observations-summary .obs-item { margin-bottom: 15px; }
+        #observations-summary .obs-item strong { color: var(--primary-color); }
         .action-buttons { text-align: center; margin-top: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .action-btn { padding: 12px 25px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; border: none; transition: all 0.3s ease; }
-        #export-pdf-btn { background-color: var(--success); color: var(--white); }
-        #reset-btn { background-color: var(--danger); color: var(--white); }
-        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        #export-pdf-btn { background-color: var(--primary-color); color: var(--white); }
+        #new-eval-btn { background-color: var(--success); color: var(--white); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .footer { padding: 20px 40px; text-align: center; font-size: 0.9em; background-color: #e0e0e0; border-top: 1px solid #ccc; color: #666;}
+        .footer a { color: var(--primary-color); font-weight: bold; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
 
-        /* --- Footer --- */
-        .footer {
-            padding: 20px 40px;
-            text-align: center;
-            font-size: 0.9em;
-            background-color: var(--light-gray);
-            border-top: 1px solid #e0e0e0;
-            color: #666;
+        @media (max-width: 768px) {
+            .results-grid { grid-template-columns: 1fr; }
+            .screen-content { padding: 20px; }
+            .main-header h1 { font-size: 1.2em; }
+            .steps-container { flex-direction: column; align-items: center; }
         }
-        .footer a {
-            color: var(--primary-color);
-            font-weight: bold;
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
+        <header class="main-header">
+            <h1 id="header-title" data-translate-key="page_title">Plataforma de Avaliação</h1>
             <div class="lang-switcher">
                 <button class="lang-btn active" id="lang-pt">PT</button>
                 <button class="lang-btn" id="lang-en">EN</button>
             </div>
-            <h1 data-translate-key="header_title">Guia de Avaliação de Livros</h1>
         </header>
-        <div class="sub-header">
-            <p data-translate-key="sub_header_title">Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)</p>
+        
+        <!-- Screen 0: Home -->
+        <div id="home-screen" class="screen active">
+             <div class="thesis-header">
+                 <p class="institution" data-translate-key="thesis_institution">Instituto Federal de Brasília</p>
+                 <p class="campus-course" data-translate-key="thesis_campus_course">Campus Riacho Fundo - Licenciatura em Letras Inglês</p>
+                 <p class="author-name" data-translate-key="thesis_author">João Vicente Saliba de Andrade</p>
+                 <h2 class="thesis-title" data-translate-key="thesis_title">Critérios para a Escolha de Livros Didáticos de Língua Inglesa a Partir da Abordagem Comunicativa</h2>
+                 <p class="thesis-subtitle" data-translate-key="thesis_subtitle">Um Guia para Estudantes de Letras Inglês</p>
+                 <p class="advisor" data-translate-key="thesis_advisor_info">Trabalho de Conclusão de Curso apresentado sob orientação de Ma. Maria Antonia Germano dos Santos Maia</p>
+             </div>
+             <div class="start-section">
+                <button id="home-start-btn" data-translate-key="home_start_btn">Iniciar Avaliação</button>
+             </div>
+             <div class="instructions-section">
+                <h3 data-translate-key="home_how_to_use">Como Usar</h3>
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <p class="step-text" data-translate-key="home_step_1">Preencha os detalhes do livro e o contexto de ensino.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <p class="step-text" data-translate-key="home_step_2">Avalie os itens de cada dimensão usando a escala.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <p class="step-text" data-translate-key="home_step_3">Analise os resultados e a recomendação final.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <p class="step-text" data-translate-key="home_step_4">Exporte o relatório detalhado em PDF, se desejar.</p>
+                    </div>
+                </div>
+             </div>
         </div>
 
         <!-- Screen 1: Setup -->
-        <div id="setup-screen" class="screen active">
-            <h2 data-translate-key="setup_title">Começar Avaliação</h2>
-            <p id="setup-context" data-translate-key="setup_context">Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.</p>
-            <div class="form-group">
-                <label for="book-title-input" data-translate-key="book_title_label">Nome do Livro Didático</label>
-                <input type="text" id="book-title-input" data-translate-key="book_title_placeholder" placeholder="Insira o nome do livro aqui...">
+        <div id="setup-screen" class="screen">
+            <div class="screen-content">
+                <h2 data-translate-key="setup_title">Informações do Livro e Contexto</h2>
+                <form id="setup-form">
+                    <div class="form-section">
+                        <h3 data-translate-key="book_details_title">Detalhes do Livro</h3>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="book-title" data-translate-key="book_title">Título do Livro</label><input type="text" id="book-title" required></div>
+                            <div class="form-group"><label for="book-author" data-translate-key="book_author">Autor(es)<span class="optional-text">(opcional)</span></label><input type="text" id="book-author"></div>
+                            <div class="form-group"><label for="book-publisher" data-translate-key="book_publisher">Editora<span class="optional-text">(opcional)</span></label><input type="text" id="book-publisher"></div>
+                            <div class="form-group"><label for="book-year" data-translate-key="book_year">Ano<span class="optional-text">(opcional)</span></label><input type="number" id="book-year"></div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3 data-translate-key="context_details_title">Contexto de Ensino</h3>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="course-type" data-translate-key="course_type">Tipo de Curso</label><input type="text" id="course-type" placeholder="Ex: Inglês Geral, Preparatório..."></div>
+                            <div class="form-group"><label for="student-profile" data-translate-key="student_profile">Perfil dos Alunos</label><textarea id="student-profile" placeholder="Ex: Adolescentes, B1, 12 alunos..."></textarea></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="start-btn" data-translate-key="start_btn">Continuar para Avaliação</button>
+                </form>
             </div>
-            <button id="start-btn" class="start-btn" data-translate-key="start_btn">Iniciar Avaliação</button>
         </div>
 
         <!-- Screen 2: Evaluation -->
         <div id="evaluation-screen" class="screen">
-            <div id="progress-bar-container">
-                <div id="progress-bar"></div>
-            </div>
-            <div id="question-container">
-                <!-- Question content will be injected here by JS -->
-            </div>
-            <div class="navigation-controls">
-                <button id="prev-btn" class="nav-btn" data-translate-key="prev_btn">Anterior</button>
-                <span id="progress-text"></span>
-                <button id="next-btn" class="nav-btn" data-translate-key="next_btn">Próximo</button>
+            <div class="screen-content">
+                <div id="progress-bar-container"><div id="progress-bar"></div></div>
+                <div class="dimension-container" id="dimension-container"></div>
+                <div class="navigation-controls">
+                    <button id="prev-btn" class="nav-btn" data-translate-key="prev_btn">Anterior</button>
+                    <span id="progress-text"></span>
+                    <button id="next-btn" class="nav-btn" data-translate-key="next_btn">Próximo</button>
+                </div>
             </div>
         </div>
 
         <!-- Screen 3: Results -->
         <div id="results-screen" class="screen">
-            <h2 data-translate-key="results_title">Resultados da Avaliação</h2>
-            <p id="book-title-result"></p>
-            <div id="score-box" class="result-box">
-                <h3 data-translate-key="score_title">Pontuação Final</h3>
-                <div id="score-display">0 / 17</div>
+            <div class="screen-content" id="report-content">
+                <h2 data-translate-key="results_title">Resultados da Avaliação</h2>
+                <p id="book-title-result"></p>
+                <div class="results-grid">
+                    <div id="chart-container"><canvas id="results-chart"></canvas></div>
+                    <div class="scores-container" id="scores-container">
+                        <!-- Dimension scores will be injected here -->
+                    </div>
+                </div>
+                <div id="essential-warning" class="result-box"></div>
+                <div id="recommendation" class="result-box"></div>
+                <div id="observations-summary" class="result-box">
+                    <h3 data-translate-key="observations_title">Observações por Dimensão</h3>
+                    <div id="observations-list"></div>
+                </div>
             </div>
-            <div id="essential-warning" class="result-box"></div>
-            <div id="recommendation" class="result-box"></div>
-            <div class="action-buttons">
-                <button id="export-pdf-btn" class="action-btn" data-translate-key="export_btn">Exportar para PDF</button>
-                <button id="reset-btn" class="action-btn" data-translate-key="reset_btn">Nova Avaliação</button>
+            <div class="action-buttons screen-content">
+                 <button id="new-eval-btn" class="action-btn" data-translate-key="nav_new_eval">Fazer Nova Avaliação</button>
+                 <button id="export-pdf-btn" class="action-btn" data-translate-key="export_btn">Exportar PDF</button>
             </div>
         </div>
 
@@ -308,140 +289,187 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- DYNAMIC BACKGROUND ---
-        const backgrounds = [
-            '#a1c4fd', '#c2e9fb', '#ff9a9e', '#fecfef',
-            '#f6d365', '#fda085', '#43e97b', '#38f9d7',
-            '#667eea', '#764ba2', '#84fab0', '#8fd3f4'
-        ];
-        const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-        document.body.style.backgroundColor = randomBg;
-
-
-        // --- DATA ---
+        // --- DATA & CONFIG ---
         const translations = {
             pt: {
-                page_title: "Guia Interativo para Avaliação de Livros",
-                header_title: "Guia de Avaliação de Livros",
-                sub_header_title: "Uma ferramenta adaptada do Trabalho de Conclusão de Curso (Letras-Inglês, IFB)",
-                setup_title: "Começar Avaliação",
-                setup_context: "Este guia interativo foi desenhado para auxiliar professores a fazerem escolhas informadas sobre materiais didáticos, com base em critérios pedagógicos sólidos.",
-                book_title_label: "Nome do Livro Didático",
-                book_title_placeholder: "Insira o nome do livro aqui...",
-                start_btn: "Iniciar Avaliação",
-                prev_btn: "Anterior",
-                next_btn: "Próximo",
-                finish_btn: "Ver Resultados",
-                results_title: "Resultados da Avaliação",
-                score_title: "Pontuação Final",
-                export_btn: "Exportar para PDF",
-                reset_btn: "Nova Avaliação",
-                essential_marker: "Essencial",
-                yes: "Sim",
-                no: "Não",
-                observations: "Observações",
-                progress_text: "Questão {current} de {total}",
-                alert_book_title: "Por favor, insira o nome do livro para começar.",
-                alert_answer_question: "Por favor, responda 'Sim' ou 'Não' para continuar.",
-                essential_warning_text: "<strong>ALERTA:</strong> Respondeu 'Não' a um ou mais critérios essenciais. O material apresenta falhas estruturais graves.",
+                page_title: "Plataforma de Avaliação de Livros",
+                nav_new_eval: "Fazer Nova Avaliação",
+                home_title: "Guia de Avaliação de Livros Didáticos de Inglês",
+                home_intro: "Uma ferramenta prática para professores, adaptada de um Trabalho de Conclusão de Curso (Letras-Inglês, IFB). Avalie materiais de forma criteriosa e fundamentada na Abordagem Comunicativa e no QECR.",
+                home_start_btn: "Iniciar Avaliação", home_how_to_use: "Como Usar",
+                home_step_1: "Preencha os detalhes do livro e o contexto de ensino.", home_step_2: "Avalie os itens de cada dimensão usando a escala.", home_step_3: "Analise os resultados e a recomendação final.", home_step_4: "Exporte o relatório detalhado em PDF, se desejar.",
+                thesis_institution: "Instituto Federal de Brasília",
+                thesis_campus_course: "Campus Riacho Fundo - Licenciatura em Letras Inglês",
+                thesis_author: "João Vicente Saliba de Andrade",
+                thesis_title: "Critérios para a Escolha de Livros Didáticos de Língua Inglesa a Partir da Abordagem Comunicativa",
+                thesis_subtitle: "Um Guia para Estudantes de Letras Inglês",
+                thesis_advisor_info: "Trabalho de Conclusão de Curso apresentado sob orientação de Ma. Maria Antonia Germano dos Santos Maia",
+                setup_title: "Informações do Livro e Contexto", book_details_title: "Detalhes do Livro", book_title: "Título do Livro", book_author: "Autor(es)", book_publisher: "Editora", book_year: "Ano",
+                context_details_title: "Contexto de Ensino", course_type: "Tipo de Curso", student_profile: "Perfil dos Alunos", start_btn: "Continuar para Avaliação",
+                prev_btn: "Anterior", next_btn: "Próximo", finish_btn: "Ver Resultados",
+                results_title: "Resultados da Avaliação", total_score: "Pontuação Geral", export_btn: "Exportar PDF",
+                essential_marker: "Essencial", progress_text: "Dimensão {current} de {total}",
+                likert_1: "Discordo", likert_5: "Concordo",
+                observations_title: "Observações por Dimensão",
+                observation_label: "Observações sobre esta Dimensão:",
+                essential_warning_text: "<strong>ALERTA:</strong> Um ou mais itens essenciais receberam nota baixa (1 ou 2).",
                 recommendation_excellent: "<h3>✅ DECISÃO: ADOTAR</h3><p>O livro está fortemente alinhado com os princípios comunicativos. Constitui uma base sólida para o curso.</p>",
                 recommendation_good: "<h3>⚠️ DECISÃO: ADOTAR COM ADAPTAÇÕES</h3><p>O livro apresenta um alinhamento razoável, mas possui lacunas. O professor deverá estar preparado para suplementar as áreas deficientes.</p>",
                 recommendation_poor: "<h3>❌ DECISÃO: REJEITAR</h3><p>O livro está fracamente alinhado com os princípios comunicativos. O esforço para adaptar seria maior do que procurar uma alternativa.</p>",
                 pdf_report_title: "Relatório de Avaliação de Livro Didático",
-                pdf_book_evaluated: "Livro Avaliado",
-                pdf_criterion: "Critério",
-                pdf_answer: "Resposta",
-                pdf_observations: "Observações",
-                pdf_final_result: "Resultado Final",
-                pdf_recommendation: "Recomendação",
                 footer_text: `Desenvolvido por <a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer">João Vicente Saliba de Andrade</a>`
             },
             en: {
-                page_title: "Interactive Textbook Evaluation Guide",
-                header_title: "Textbook Evaluation Guide",
-                sub_header_title: "A tool adapted from a Graduation Thesis (English Major, IFB)",
-                setup_title: "Start Evaluation",
-                setup_context: "This interactive guide is designed to help teachers make informed choices about educational materials, based on solid pedagogical criteria.",
-                book_title_label: "Textbook Title",
-                book_title_placeholder: "Enter the textbook title here...",
-                start_btn: "Start Evaluation",
-                prev_btn: "Previous",
-                next_btn: "Next",
-                finish_btn: "See Results",
-                results_title: "Evaluation Results",
-                score_title: "Final Score",
-                export_btn: "Export to PDF",
-                reset_btn: "New Evaluation",
-                essential_marker: "Essential",
-                yes: "Yes",
-                no: "No",
-                observations: "Observations",
-                progress_text: "Question {current} of {total}",
-                alert_book_title: "Please enter the book title to start.",
-                alert_answer_question: "Please answer 'Yes' or 'No' to continue.",
-                essential_warning_text: "<strong>WARNING:</strong> You answered 'No' to one or more essential criteria. The material has serious structural flaws.",
+                page_title: "Textbook Evaluation Platform",
+                nav_new_eval: "New Evaluation",
+                home_title: "English Textbook Evaluation Guide",
+                home_intro: "A practical tool for teachers, adapted from a Graduation Thesis (English Major, IFB). Evaluate materials critically, based on the Communicative Approach and the CEFR.",
+                home_start_btn: "Start Evaluation", home_how_to_use: "How to Use",
+                home_step_1: "Fill in the book details and teaching context.", home_step_2: "Rate the items in each dimension using the scale.", home_step_3: "Analyze the score, chart, and final recommendation.", home_step_4: "Export the detailed report to PDF if you wish.",
+                thesis_institution: "Federal Institute of Brasília",
+                thesis_campus_course: "Riacho Fundo Campus - Bachelor's Degree in English Language Arts",
+                thesis_author: "João Vicente Saliba de Andrade",
+                thesis_title: "Criteria for Selecting English Language Textbooks Based on the Communicative Approach",
+                thesis_subtitle: "A Guide for English Major Students",
+                thesis_advisor_info: "Graduation Thesis presented under the supervision of Ma. Maria Antonia Germano dos Santos Maia",
+                setup_title: "Book Information and Context", book_details_title: "Book Details", book_title: "Book Title", book_author: "Author(s)", book_publisher: "Publisher", book_year: "Year",
+                context_details_title: "Teaching Context", course_type: "Course Type", student_profile: "Student Profile", start_btn: "Continue to Evaluation",
+                prev_btn: "Previous", next_btn: "Next", finish_btn: "See Results",
+                results_title: "Evaluation Results", total_score: "Overall Score", export_btn: "Export PDF",
+                essential_marker: "Essential", progress_text: "Dimension {current} of {total}",
+                likert_1: "Disagree", likert_5: "Agree",
+                observations_title: "Observations per Dimension",
+                observation_label: "Observations on this Dimension:",
+                essential_warning_text: "<strong>WARNING:</strong> One or more essential items received a low score (1 or 2).",
                 recommendation_excellent: "<h3>✅ DECISION: ADOPT</h3><p>The textbook is strongly aligned with communicative principles. It provides a solid foundation for the course.</p>",
                 recommendation_good: "<h3>⚠️ DECISION: ADOPT WITH ADAPTATIONS</h3><p>The textbook shows reasonable alignment but has gaps. The teacher should be prepared to supplement deficient areas.</p>",
                 recommendation_poor: "<h3>❌ DECISION: REJECT</h3><p>The textbook is weakly aligned with communicative principles. The effort to adapt it would be greater than finding a more suitable alternative.</p>",
                 pdf_report_title: "Textbook Evaluation Report",
-                pdf_book_evaluated: "Textbook Evaluated",
-                pdf_criterion: "Criterion",
-                pdf_answer: "Answer",
-                pdf_observations: "Observations",
-                pdf_final_result: "Final Result",
-                pdf_recommendation: "Recommendation",
                 footer_text: `Developed by <a href="https://www.linkedin.com/in/joaosvicente/" target="_blank" rel="noopener noreferrer">João Vicente Saliba de Andrade</a>`
             }
         };
 
-        const questionsData = [
-            { id: 1, essential: true, pt: { title: "Coerência com a Abordagem Comunicativa (AC)", items: ["Os objetivos do livro são comunicativos?", "A metodologia prioriza o uso da língua para comunicar?", "O material promove uma versão 'forte' da AC, onde se aprende comunicando?"] }, en: { title: "Coherence with the Communicative Approach (CA)", items: ["Are the book's objectives communicative?", "Does the methodology prioritize language use for communication?", "Does the material promote a 'strong' version of CA, where learning happens by communicating?"] } },
-            { id: 2, essential: true, pt: { title: "Alinhamento com o QECR", items: ["O livro indica claramente o nível de proficiência do QECR?", "As atividades são consistentes com os descritores 'posso fazer' (can-do statements)?"] }, en: { title: "Alignment with CEFR", items: ["Does the book clearly indicate the CEFR proficiency level?", "Are activities consistent with the 'can-do statements' for the level?"] } },
-            { id: 3, essential: false, pt: { title: "Adequação ao Contexto de Ensino", items: ["O material é adequado à faixa etária, interesses e necessidades dos alunos?", "Os objetivos do livro alinham-se com os do seu curso?"] }, en: { title: "Suitability for Teaching Context", items: ["Is the material appropriate for the students' age, interests, and needs?", "Do the book's objectives align with your course goals?"] } },
-            { id: 4, essential: false, pt: { title: "Competência Gramatical/Linguística", items: ["A gramática e o vocabulário são apresentados em contextos significativos?", "Há um equilíbrio entre apresentação, prática controlada e uso livre?"] }, en: { title: "Grammatical/Linguistic Competence", items: ["Are grammar and vocabulary presented in meaningful contexts?", "Is there a balance between presentation, controlled practice, and free use?"] } },
-            { id: 5, essential: false, pt: { title: "Competência Sociolinguística/Interacional", items: ["O material expõe os alunos a diferentes registos de formalidade?", "As atividades requerem escolhas linguísticas apropriadas ao contexto social?"] }, en: { title: "Sociolinguistic/Interactional Competence", items: ["Does the material expose students to different registers of formality?", "Do activities require sociolinguistically appropriate choices?"] } },
-            { id: 6, essential: false, pt: { title: "Competência Discursiva", items: ["O livro ajuda os alunos a produzirem textos coesos e coerentes?", "São trabalhados diferentes géneros textuais?"] }, en: { title: "Discourse Competence", items: ["Does the book help students produce cohesive and coherent texts?", "Are different text genres addressed?"] } },
-            { id: 7, essential: false, pt: { title: "Competência Estratégica", items: ["O material ensina estratégias para lidar com falhas na comunicação?"] }, en: { title: "Strategic Competence", items: ["Does the material teach strategies for dealing with communication breakdowns?"] } },
-            { id: 8, essential: true, pt: { title: "Tipologia e Qualidade das Tarefas", items: ["As atividades são tarefas com um propósito comunicativo claro?", "As tarefas são centradas no aluno e focadas no significado?"] }, en: { title: "Task Type and Quality", items: ["Are activities tasks with a clear communicative purpose?", "Are tasks student-centered and meaning-focused?"] } },
-            { id: 9, essential: true, pt: { title: "Autenticidade", items: ["O livro utiliza textos autênticos ou semi-autênticos?", "As tarefas replicam o uso real da língua?"] }, en: { title: "Authenticity", items: ["Does the book use authentic or semi-authentic texts?", "Do tasks replicate real-life language use?"] } },
-            { id: 10, essential: true, pt: { title: "Padrões de Interação", items: ["O material promove ativamente o trabalho em pares e em grupos?", "As atividades incentivam a negociação de significado?"] }, en: { title: "Interaction Patterns", items: ["Does the material actively promote pair and group work?", "Do activities encourage negotiation of meaning?"] } },
-            { id: 11, essential: false, pt: { title: "Equilíbrio entre Fluência e Precisão", items: ["Existem oportunidades para prática focada na fluência?", "Existem momentos para prática focada na correção gramatical?"] }, en: { title: "Balance between Fluency and Accuracy", items: ["Are there opportunities for fluency-focused practice?", "Are there moments for accuracy-focused practice?"] } },
-            { id: 12, essential: false, pt: { title: "Relevância e Interesse dos Tópicos", items: ["Os temas são motivadores e relevantes para os alunos?", "Os tópicos geram discussão e comunicação genuína?"] }, en: { title: "Topic Relevance and Interest", items: ["Are the topics motivating and relevant for the students?", "Are topics likely to generate genuine discussion?"] } },
-            { id: 13, essential: false, pt: { title: "Representação Cultural", items: ["A diversidade cultural do mundo anglófono é representada?", "O material evita estereótipos e promove a consciência intercultural?"] }, en: { title: "Cultural Representation", items: ["Is the cultural diversity of the English-speaking world represented?", "Does the material avoid stereotypes and promote intercultural awareness?"] } },
-            { id: 14, essential: false, pt: { title: "Impacto Afetivo", items: ["O desenho e o tom do livro são apelativos e motivadores?", "O material parece capaz de construir a confiança dos alunos?"] }, en: { title: "Affective Impact", items: ["Are the book's design and tone appealing and motivating?", "Does the material seem likely to build student confidence?"] } },
-            { id: 15, essential: false, pt: { title: "Leiaute e Desenho Visual", items: ["A organização das unidades é clara e lógica?", "O leiaute é limpo e fácil de navegar?"] }, en: { title: "Layout and Visual Design", items: ["Is the organization of units clear and logical?", "Is the layout clean and easy to navigate?"] } },
-            { id: 16, essential: false, pt: { title: "Componentes de Suporte", items: ["O Livro do Professor é útil e completo?", "A qualidade dos recursos áudio/vídeo é boa?", "A plataforma digital (se houver) acrescenta valor?"] }, en: { title: "Support Components", items: ["Is the Teacher's Book useful and complete?", "Is the quality of audio/video resources good?", "Does the digital platform (if any) add value?"] } },
-            { id: 17, essential: false, pt: { title: "Viabilidade Prática", items: ["O custo do livro é acessível para os alunos?", "O material está facilmente disponível no mercado?"] }, en: { title: "Practical Viability", items: ["Is the book's cost affordable for students?", "Is the material easily available on the market?"] } }
+        const dimensionsData = [
+            { // Dimensão 1
+                pt: "Fundamentação Pedagógica e Alinhamento Curricular", en: "Pedagogical Foundation and Curricular Alignment",
+                acronym_pt: "FPAC", acronym_en: "PFCA",
+                criteria: [
+                    { title_pt: "Critério 1: Coerência com a Abordagem Comunicativa (AC)", title_en: "Criterion 1: Coherence with Communicative Approach (CA)", items: [
+                        { id: 'c1_1', essential: true, pt: 'As unidades são organizadas em torno de funções comunicativas (ex: "dar conselhos") ou em torno de tópicos gramaticais isolados (ex: "Present Perfect")?', en: 'Are units organized around communicative functions (e.g., "giving advice") or around isolated grammatical topics (e.g., "Present Perfect")?' },
+                        { id: 'c1_2', essential: true, pt: "A gramática é apresentada como uma ferramenta para a comunicação ou como um fim em si mesma?", en: "Is grammar presented as a tool for communication or as an end in itself?"},
+                        { id: 'c1_3', essential: true, pt: "O livro me fornece atividades que levam ao uso real da língua ou se limita a exercícios mecânicos de repetição e preenchimento de lacunas?", en: "Does the book provide me with activities that lead to real language use or is it limited to mechanical repetition and fill-in-the-blank exercises?"}
+                    ]},
+                    { title_pt: "Critério 2: Alinhamento com o QECR", title_en: "Criterion 2: Alignment with CEFR", items: [
+                        { id: 'c2_1', essential: true, pt: "O livro indica claramente a qual nível do Quadro Europeu Comum de Referência (A1, A2, B1, etc.) ele se destina?", en: "Does the book clearly indicate which level of the Common European Framework of Reference (A1, A2, B1, etc.) it is intended for?" },
+                        { id: 'c2_2', essential: false, pt: 'Os objetivos de cada unidade são descritos em termos de capacidades práticas e observáveis ("can-do statements"), como "Ao final da lição, o aluno será capaz de..."?', en: 'Are the objectives of each unit described in terms of practical and observable abilities ("can-do statements"), such as "By the end of the lesson, the student will be able to..."?' },
+                        { id: 'c2_3', essential: false, pt: "As tarefas e avaliações propostas são visivelmente coerentes com as competências esperadas para o nível declarado?", en: "Are the proposed tasks and assessments visibly consistent with the competencies expected for the declared level?"}
+                    ]},
+                    { title_pt: "Critério 3: Adequação ao contexto de ensino", title_en: "Criterion 3: Suitability for Teaching Context", items: [
+                        { id: 'c3_1', essential: false, pt: "Os temas, imagens e situações do livro são relevantes e interessantes para a faixa etária e o perfil sociocultural dos meus alunos?", en: "Are the themes, images, and situations in the book relevant and interesting for the age group and sociocultural profile of my students?" },
+                        { id: 'c3_2', essential: false, pt: "O material é flexível o suficiente para ser adaptado aos objetivos específicos do meu curso (geral, negócios, preparatório) e à minha carga horária?", en: "Is the material flexible enough to be adapted to the specific objectives of my course (general, business, preparatory) and to my workload?"},
+                        { id: 'c3_3', essential: false, pt: "O livro considera diferentes estilos de aprendizagem, oferecendo uma variedade de tipos de atividade (visuais, auditivas, cinestésicas)?", en: "Does the book consider different learning styles by offering a variety of activity types (visual, auditory, kinesthetic)?"}
+                    ]}
+                ]
+            },
+            { // Dimensão 2
+                pt: "Desenvolvimento da Competência Comunicativa", en: "Communicative Competence Development",
+                acronym_pt: "DCC", acronym_en: "CCD",
+                criteria: [
+                     { title_pt: "Critério 4: Competência gramatical/linguística", title_en: "Criterion 4: Grammatical/Linguistic Competence", items: [
+                        { id: 'c4_1', essential: false, pt: "A gramática é apresentada dentro de contextos significativos (diálogos, textos), facilitando a compreensão de seu uso?", en: "Is grammar presented within meaningful contexts (dialogues, texts), facilitating the understanding of its use?" },
+                        { id: 'c4_2', essential: false, pt: "As atividades de prática incentivam o uso indutivo e a descoberta das regras pelos alunos, ou dependem exclusivamente de explicação explícita?", en: "Do practice activities encourage inductive use and discovery of rules by students, or do they rely solely on explicit explanation?"}
+                    ]},
+                     { title_pt: "Critério 5: Competência sociolinguística/interacional", title_en: "Criterion 5: Sociolinguistic/Interactional Competence", items: [
+                        { id: 'c5_1', essential: false, pt: "O livro expõe os alunos a diferentes registros de fala (formal, informal, neutro) e ensina quando usar cada um?", en: "Does the book expose students to different speech registers (formal, informal, neutral) and teach when to use each?" },
+                        { id: 'c5_2', essential: false, pt: "As atividades trabalham a adequação da linguagem ao contexto social (ex: como falar com uma autoridade vs. como falar com um amigo)?", en: "Do the activities address the appropriateness of language to the social context (e.g., how to speak to an authority figure vs. how to speak to a friend)?"}
+                    ]},
+                     { title_pt: "Critério 6: Competência discursiva", title_en: "Criterion 6: Discourse Competence", items: [
+                        { id: 'c6_1', essential: false, pt: "O material vai além do ensino de frases isoladas, ajudando os alunos a estruturar textos maiores e mais complexos (parágrafos, e-mails, narrativas)?", en: "Does the material go beyond teaching isolated sentences, helping students to structure larger and more complex texts (paragraphs, emails, narratives)?" },
+                        { id: 'c6_2', essential: false, pt: "O uso de conectores e outros elementos de coesão textual é ensinado e praticado de forma clara?", en: "Is the use of connectors and other textual cohesion elements taught and practiced clearly?"}
+                    ]},
+                     { title_pt: "Critério 7: Competência estratégica", title_en: "Criterion 7: Strategic Competence", items: [
+                        { id: 'c7_1', essential: false, pt: "O livro ensina, de forma explícita ou implícita, estratégias para lidar com falhas na comunicação (ex: pedir clarificação, parafrasear, usar gestos)?", en: "Does the book, explicitly or implicitly, teach strategies for dealing with communication breakdowns (e.g., asking for clarification, paraphrasing, using gestures)?"},
+                        { id: 'c7_2', essential: false, pt: "Existem atividades que encorajam os alunos a se arriscarem e se comunicarem mesmo com um repertório linguístico limitado?", en: "Are there activities that encourage students to take risks and communicate even with a limited linguistic repertoire?"}
+                    ]}
+                ]
+            },
+            { // Dimensão 3
+                pt: "Qualidade das Tarefas, Autenticidade e Interação", en: "Task Quality, Authenticity, and Interaction",
+                acronym_pt: "QTAI", acronym_en: "TQAI",
+                criteria: [
+                    { title_pt: "Critério 8: Tipologia e qualidade das tarefas", title_en: "Criterion 8: Task Type and Quality", items: [
+                        { id: 'c8_1', essential: true, pt: 'As atividades principais de cada unidade são "tarefas" com um objetivo comunicativo real (ex: resolver um problema, criar um produto) ou são apenas exercícios linguísticos?', en: 'Are the main activities of each unit "tasks" with a real communicative objective (e.g., solving a problem, creating a product) or are they just linguistic exercises?' },
+                        { id: 'c8_2', essential: true, pt: "As tarefas propostas exigem que os alunos foquem primariamente no significado e na mensagem para chegar a um resultado?", en: "Do the proposed tasks require students to focus primarily on meaning and message to achieve a result?"}
+                    ]},
+                    { title_pt: "Critério 9: Autenticidade", title_en: "Criterion 9: Authenticity", items: [
+                        { id: 'c9_1', essential: true, pt: "O livro utiliza textos e áudios autênticos ou semi-autênticos (artigos, podcasts, vídeos reais) que exponham os alunos à língua como ela é usada no mundo real?", en: "Does the book use authentic or semi-authentic texts and audio (articles, podcasts, real videos) that expose students to the language as it is used in the real world?" },
+                        { id: 'c9_2', essential: true, pt: "As tarefas propostas simulam situações de uso da língua que são críveis e relevantes para a vida do aluno fora da sala de aula?", en: "Do the proposed tasks simulate language use situations that are credible and relevant to the student's life outside the classroom?"}
+                    ]},
+                    { title_pt: "Critério 10: Padrões de interação", title_en: "Criterion 10: Interaction Patterns", items: [
+                        { id: 'c10_1', essential: true, pt: "O livro sugere consistentemente atividades em pares e em pequenos grupos, ou a maior parte do trabalho é individual e focado no professor?", en: "Does the book consistently suggest activities in pairs and small groups, or is most of the work individual and teacher-focused?" },
+                        { id: 'c10_2', essential: true, pt: "As atividades são desenhadas para maximizar o tempo de fala do aluno (Student Talking Time) e promover a negociação de significado entre eles?", en: "Are the activities designed to maximize student talking time (Student Talking Time) and promote negotiation of meaning among them?"}
+                    ]},
+                     { title_pt: "Critério 11: Equilíbrio entre fluência e precisão", title_en: "Criterion 11: Balance between Fluency and Accuracy", items: [
+                        { id: 'c11_1', essential: false, pt: "O material oferece um bom equilíbrio entre atividades de fluência (foco na comunicação livre e na mensagem) e atividades de precisão (foco na correção da forma)?", en: "Does the material offer a good balance between fluency activities (focus on free communication and message) and accuracy activities (focus on correcting the form)?" },
+                        { id: 'c11_2', essential: false, pt: "Após uma atividade de fluência, o livro sugere formas de o professor dar um feedback focado na forma, sem desestimular o aluno?", en: "After a fluency activity, does the book suggest ways for the teacher to give form-focused feedback without discouraging the student?"}
+                    ]},
+                ]
+            },
+            { // Dimensão 4
+                pt: "Conteúdo, Cultura e Fatores Afetivos", en: "Content, Culture, and Affective Factors",
+                acronym_pt: "CCFA", acronym_en: "CCAF",
+                criteria: [
+                     { title_pt: "Critério 12: Relevância e interesse dos tópicos", title_en: "Criterion 12: Topic Relevance and Interest", items: [
+                        { id: 'c12_1', essential: false, pt: "Os tópicos abordados são atuais, estimulantes e capazes de gerar discussões e engajamento genuíno em sala de aula?", en: "Are the topics covered current, stimulating, and capable of generating genuine discussions and engagement in the classroom?" },
+                        { id: 'c12_2', essential: false, pt: "Os temas são apropriados para a maturidade intelectual e emocional dos alunos?", en: "Are the themes appropriate for the students' intellectual and emotional maturity?"}
+                    ]},
+                     { title_pt: "Critério 13: Representação cultural", title_en: "Criterion 13: Cultural Representation", items: [
+                        { id: 'c13_1', essential: false, pt: "A representação de diferentes culturas no livro evita estereótipos e apresenta uma visão plural e respeitosa?", en: "Does the representation of different cultures in the book avoid stereotypes and present a pluralistic and respectful view?" },
+                        { id: 'c13_2', essential: false, pt: "O material vai além de uma visão monolítica (britânica/americana) e inclui perspectivas de outras culturas que utilizam a língua-alvo?", en: "Does the material go beyond a monolithic view (British/American) and include perspectives from other cultures that use the target language?"}
+                    ]},
+                     { title_pt: "Critério 14: Impacto afetivo", title_en: "Criterion 14: Affective Impact", items: [
+                        { id: 'c14_1', essential: false, pt: "O tom geral do livro (instruções, imagens, tipos de tarefa) tende a reduzir a ansiedade e a aumentar a autoconfiança dos alunos para se comunicarem?", en: "Does the overall tone of the book (instructions, images, task types) tend to reduce anxiety and increase students' self-confidence to communicate?" },
+                        { id: 'c14_2', essential: false, pt: "O material projeta uma imagem positiva e inclusiva do aprendiz de línguas?", en: "Does the material project a positive and inclusive image of the language learner?"}
+                    ]}
+                ]
+            },
+            { // Dimensão 5
+                pt: "Design, Usabilidade e Componentes de Suporte", en: "Design, Usability, and Support Components",
+                acronym_pt: "DUCS", acronym_en: "DUSC",
+                criteria: [
+                     { title_pt: "Critério 15: Leiaute e desenho visual", title_en: "Criterion 15: Layout and Visual Design", items: [
+                        { id: 'c15_1', essential: false, pt: "O leiaute da página é claro e organizado? As instruções das atividades são fáceis de localizar e compreender?", en: "Is the page layout clear and organized? Are the activity instructions easy to locate and understand?" },
+                        { id: 'c15_2', essential: false, pt: "Os elementos visuais (fotos, gráficos, ícones) apoiam a aprendizagem de forma eficaz ou são meramente decorativos e podem causar distração?", en: "Do the visual elements (photos, graphics, icons) effectively support learning or are they merely decorative and potentially distracting?"}
+                    ]},
+                     { title_pt: "Critério 16: Componentes de suporte", title_en: "Criterion 16: Support Components", items: [
+                        { id: 'c16_1', essential: false, pt: "O Livro do Professor oferece orientações pedagógicas claras, justificativas para as atividades, respostas e sugestões de expansão ou adaptação?", en: "Does the Teacher's Book offer clear pedagogical guidance, justifications for activities, answers, and suggestions for expansion or adaptation?" },
+                        { id: 'c16_2', essential: false, pt: "O material de áudio/vídeo e os componentes digitais (plataformas, aplicativos) são de boa qualidade, fáceis de acessar e estão bem integrados às lições do livro do aluno?", en: "Are the audio/video material and digital components (platforms, applications) of good quality, easy to access, and well-integrated with the student's book lessons?"}
+                    ]},
+                     { title_pt: "Critério 17: Viabilidade prática", title_en: "Criterion 17: Practical Viability", items: [
+                        { id: 'c17_1', essential: false, pt: "O custo-benefício do pacote completo (livro do aluno, caderno de exercícios, recursos digitais) é adequado para a realidade financeira dos alunos/instituição?", en: "Is the cost-effectiveness of the complete package (student's book, workbook, digital resources) suitable for the financial reality of the students/institution?" },
+                        { id: 'c17_2', essential: false, pt: "O material é facilmente encontrado e adquirido no mercado local? O suporte da editora é acessível?", en: "Is the material easily found and purchased in the local market? Is the publisher's support accessible?"}
+                    ]}
+                ]
+            }
         ];
 
         // --- STATE ---
         let currentLanguage = 'pt';
-        let currentQuestionIndex = 0;
-        let bookTitle = '';
-        let answers = new Array(questionsData.length).fill(null).map(() => ({ answer: null, observation: '' }));
-
+        let currentDimensionIndex = 0;
+        let currentEvaluation = {};
+        let resultsChart = null;
+        
         // --- DOM ELEMENTS ---
         const screens = document.querySelectorAll('.screen');
-        const setupScreen = document.getElementById('setup-screen');
-        const evaluationScreen = document.getElementById('evaluation-screen');
-        const resultsScreen = document.getElementById('results-screen');
-        const startBtn = document.getElementById('start-btn');
-        const bookTitleInput = document.getElementById('book-title-input');
+        const setupForm = document.getElementById('setup-form');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
-        const questionContainer = document.getElementById('question-container');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const resetBtn = document.getElementById('reset-btn');
-        const exportPdfBtn = document.getElementById('export-pdf-btn');
-        const langPtBtn = document.getElementById('lang-pt');
-        const langEnBtn = document.getElementById('lang-en');
 
         // --- FUNCTIONS ---
         const updateUIStrings = () => {
             document.querySelectorAll('[data-translate-key]').forEach(el => {
                 const key = el.getAttribute('data-translate-key');
-                if (translations[currentLanguage][key]) {
+                if (translations[currentLanguage] && translations[currentLanguage][key]) {
                     if (el.tagName === 'INPUT' && el.placeholder) {
                         el.placeholder = translations[currentLanguage][key];
                     } else {
@@ -450,216 +478,256 @@
                 }
             });
             document.getElementById('html-lang').lang = currentLanguage;
-        };
-        
-        const switchLanguage = (lang) => {
-            currentLanguage = lang;
-            langPtBtn.classList.toggle('active', lang === 'pt');
-            langEnBtn.classList.toggle('active', lang === 'en');
-            updateUIStrings();
-            if (evaluationScreen.classList.contains('active')) renderQuestion(currentQuestionIndex);
-            if (resultsScreen.classList.contains('active')) showResults();
+            if (document.querySelector('.screen.active').id === 'evaluation-screen') {
+                renderDimension(currentDimensionIndex);
+            }
+            if(document.querySelector('.screen.active').id === 'results-screen') {
+                showResults();
+            }
         };
 
-        const navigateToScreen = (screenId) => {
+        const switchLanguage = (lang) => {
+            currentLanguage = lang;
+            document.getElementById('lang-pt').classList.toggle('active', lang === 'pt');
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            updateUIStrings();
+        };
+
+        const navigateTo = (screenId) => {
             screens.forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         };
 
-        const startEvaluation = () => {
-            bookTitle = bookTitleInput.value.trim();
-            if (!bookTitle) {
-                alert(translations[currentLanguage].alert_book_title);
-                return;
-            }
-            navigateToScreen('evaluation-screen');
-            renderQuestion(currentQuestionIndex);
-        };
-
-        const saveCurrentAnswer = () => {
-             if (!evaluationScreen.classList.contains('active')) return;
-            const selectedRadio = questionContainer.querySelector('input[name="answer"]:checked');
-            const observation = questionContainer.querySelector('#observation-textarea').value;
-            answers[currentQuestionIndex] = {
-                answer: selectedRadio ? selectedRadio.value : null,
-                observation: observation
+        const startNewEvaluation = () => {
+            currentDimensionIndex = 0;
+            const bookDetails = {
+                title: setupForm.querySelector('#book-title').value.trim() || "Untitled",
+                author: setupForm.querySelector('#book-author').value,
+                publisher: setupForm.querySelector('#book-publisher').value,
+                year: setupForm.querySelector('#book-year').value,
+                courseType: setupForm.querySelector('#course-type').value,
+                studentProfile: setupForm.querySelector('#student-profile').value,
             };
+            currentEvaluation = {
+                id: Date.now(),
+                details: bookDetails,
+                answers: dimensionsData.map(dim => 
+                    dim.criteria.map(crit => 
+                        crit.items.map(() => 0) // Initialize with 0
+                    )
+                ),
+                observations: new Array(dimensionsData.length).fill("")
+            };
+            navigateTo('evaluation-screen');
+            renderDimension(currentDimensionIndex);
         };
         
-        const renderQuestion = (index) => {
-            const question = questionsData[index];
-            const langData = question[currentLanguage];
-            const savedAnswer = answers[index];
-
-            const essentialMarkerHTML = question.essential 
-                ? `<span class="essential-marker">⭐<span class="tooltip">${translations[currentLanguage].essential_marker}</span></span>` 
-                : '';
-
-            let questionHTML = `
-                <div class="criterion-title">${question.id}. ${langData.title} ${essentialMarkerHTML}</div>
-                <div class="guiding-questions"><ul>${langData.items.map(item => `<li>${item}</li>`).join('')}</ul></div>
-                <div class="evaluation-area">
-                    <input type="radio" id="q-yes" name="answer" value="yes" ${savedAnswer.answer === 'yes' ? 'checked' : ''}><label for="q-yes" class="label-sim">${translations[currentLanguage].yes}</label>
-                    <input type="radio" id="q-no" name="answer" value="no" ${savedAnswer.answer === 'no' ? 'checked' : ''}><label for="q-no" class="label-nao">${translations[currentLanguage].no}</label>
-                </div>
-                <textarea id="observation-textarea" placeholder="${translations[currentLanguage].observations}...">${savedAnswer.observation}</textarea>
-            `;
+        const renderDimension = (index) => {
+            const dimension = dimensionsData[index];
+            const langKey = currentLanguage;
             
-            questionContainer.innerHTML = questionHTML;
+            let dimensionHTML = `<div class="dimension-title">${dimension[langKey]}</div>`;
+            dimension.criteria.forEach((crit, critIndex) => {
+                dimensionHTML += `<div class="criterion-group"><div class="criterion-group-title">${crit['title_' + langKey]}</div>`;
+                crit.items.forEach((item, itemIndex) => {
+                    const rating = currentEvaluation.answers[index][critIndex][itemIndex] || 0;
+                    const essentialMarkerHTML = item.essential ? `<span class="essential-marker">⭐</span>` : '';
+                    dimensionHTML += `
+                        <div class="checklist-item">
+                            <p>${item[langKey]} ${essentialMarkerHTML}</p>
+                            <div class="rating-area">
+                                <span data-translate-key="likert_1">Discordo</span>
+                                <div class="rating-buttons">
+                                ${[1,2,3,4,5].map(n => `<input type="radio" id="r_${critIndex}_${itemIndex}_${n}" name="rating_${critIndex}_${itemIndex}" value="${n}" ${rating == n ? 'checked' : ''} data-crit-index="${critIndex}" data-item-index="${itemIndex}"><label for="r_${critIndex}_${itemIndex}_${n}">${n}</label>`).join('')}
+                                </div>
+                                <span data-translate-key="likert_5">Concordo</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                dimensionHTML += `</div>`;
+            });
+
+            const savedObservation = currentEvaluation.observations[index] || "";
+            dimensionHTML += `
+                <div id="observation-section">
+                    <label for="observation-textarea" data-translate-key="observation_label">Observações sobre esta Dimensão:</label>
+                    <textarea id="observation-textarea">${savedObservation}</textarea>
+                </div>
+            `;
+
+            document.getElementById('dimension-container').innerHTML = dimensionHTML;
+            updateUIStrings(); 
             updateNavigation(index);
         };
-        
+
         const updateNavigation = (index) => {
-            progressBar.style.width = `${((index + 1) / questionsData.length) * 100}%`;
-            progressText.textContent = translations[currentLanguage].progress_text.replace('{current}', index + 1).replace('{total}', questionsData.length);
+            const total = dimensionsData.length;
+            document.getElementById('progress-bar').style.width = `${((index + 1) / total) * 100}%`;
+            document.getElementById('progress-text').textContent = translations[currentLanguage].progress_text.replace('{current}', index + 1).replace('{total}', total);
             prevBtn.disabled = index === 0;
-            nextBtn.innerHTML = (index === questionsData.length - 1) ? translations[currentLanguage].finish_btn : translations[currentLanguage].next_btn;
+            nextBtn.innerHTML = (index === total - 1) ? translations[currentLanguage].finish_btn : translations[currentLanguage].next_btn;
         };
         
         const handleNavigation = (direction) => {
-            const currentAnswer = questionContainer.querySelector('input[name="answer"]:checked');
-            if (!currentAnswer) {
-                alert(translations[currentLanguage].alert_answer_question);
-                return;
-            }
-            saveCurrentAnswer();
-            
-            if (direction === 'next') {
-                if (currentQuestionIndex < questionsData.length - 1) {
-                    currentQuestionIndex++;
-                    renderQuestion(currentQuestionIndex);
-                } else {
-                    showResults();
-                }
-            } else if (direction === 'prev') {
-                if (currentQuestionIndex > 0) {
-                    currentQuestionIndex--;
-                    renderQuestion(currentQuestionIndex);
-                }
+            // Save ratings
+            const radioGroups = document.querySelectorAll('.criterion-group');
+            radioGroups.forEach(group => {
+                const radios = group.querySelectorAll('input[type="radio"]');
+                radios.forEach(radio => {
+                    if (radio.checked) {
+                        const { critIndex, itemIndex } = radio.dataset;
+                        currentEvaluation.answers[currentDimensionIndex][parseInt(critIndex)][parseInt(itemIndex)] = parseInt(radio.value);
+                    }
+                });
+            });
+            // Save observation
+            currentEvaluation.observations[currentDimensionIndex] = document.getElementById('observation-textarea').value;
+
+            if (direction === 'next' && currentDimensionIndex < dimensionsData.length - 1) {
+                currentDimensionIndex++;
+                renderDimension(currentDimensionIndex);
+            } else if (direction === 'prev' && currentDimensionIndex > 0) {
+                currentDimensionIndex--;
+                renderDimension(currentDimensionIndex);
+            } else if (direction === 'next') {
+                showResults();
             }
         };
 
         const showResults = () => {
-            navigateToScreen('results-screen');
-            
-            let score = 0;
+            navigateTo('results-screen');
+            document.getElementById('book-title-result').textContent = currentEvaluation.details.title;
+
             let essentialFail = false;
-            answers.forEach((ans, i) => {
-                if (ans.answer === 'yes') score++;
-                if (questionsData[i].essential && ans.answer === 'no') essentialFail = true;
+            let totalScore = 0;
+            let maxScore = 0;
+
+            const dimensionResults = dimensionsData.map((dim, dimIndex) => {
+                let dimScore = 0;
+                let dimMaxScore = 0;
+                dim.criteria.forEach((crit, critIndex) => {
+                    crit.items.forEach((item, itemIndex) => {
+                        const rating = currentEvaluation.answers[dimIndex][critIndex][itemIndex] || 0;
+                        const weight = item.essential ? 2 : 1;
+                        dimScore += rating * weight;
+                        dimMaxScore += 5 * weight;
+                        if (item.essential && rating < 3) {
+                            essentialFail = true;
+                        }
+                    });
+                });
+                totalScore += dimScore;
+                maxScore += dimMaxScore;
+                return {
+                    title: dim[currentLanguage],
+                    percentage: dimMaxScore > 0 ? (dimScore / dimMaxScore) * 100 : 0
+                };
+            });
+            
+            const overallPercentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+            const scoresContainer = document.getElementById('scores-container');
+            scoresContainer.innerHTML = ''; 
+            dimensionResults.forEach(res => {
+                scoresContainer.innerHTML += `
+                    <div class="result-box">
+                        <h3>${res.title} (${Math.round(res.percentage)}%)</h3>
+                        <div class="dimension-score-bar"><div style="width: ${res.percentage}%;"></div></div>
+                    </div>`;
+            });
+            
+            document.getElementById('essential-warning').style.display = essentialFail ? 'block' : 'none';
+            document.getElementById('essential-warning').innerHTML = translations[currentLanguage].essential_warning_text;
+            
+            const obsList = document.getElementById('observations-list');
+            obsList.innerHTML = '';
+            currentEvaluation.observations.forEach((obs, index) => {
+                if(obs.trim() !== '') {
+                    obsList.innerHTML += `<div class="obs-item"><strong>${dimensionsData[index][currentLanguage]}:</strong><p>${obs}</p></div>`;
+                }
             });
 
-            document.getElementById('book-title-result').textContent = bookTitle;
-            document.getElementById('score-display').textContent = `${score} / ${questionsData.length}`;
-            
-            const warningDiv = document.getElementById('essential-warning');
-            if (essentialFail) {
-                warningDiv.innerHTML = translations[currentLanguage].essential_warning_text;
-                warningDiv.style.display = 'block';
-            } else {
-                warningDiv.style.display = 'none';
-            }
 
             const recDiv = document.getElementById('recommendation');
-            if (score >= 14 && !essentialFail) {
+             if (overallPercentage >= 75 && !essentialFail) {
                 recDiv.className = 'result-box excellent';
                 recDiv.innerHTML = translations[currentLanguage].recommendation_excellent;
-            } else if (score >= 10) {
+            } else if (overallPercentage >= 50) {
                 recDiv.className = 'result-box good';
                 recDiv.innerHTML = translations[currentLanguage].recommendation_good;
             } else {
                 recDiv.className = 'result-box poor';
                 recDiv.innerHTML = translations[currentLanguage].recommendation_poor;
             }
+            
+            renderResultsChart(dimensionResults.map(r => r.percentage));
+        };
+
+        const renderResultsChart = (data) => {
+            const ctx = document.getElementById('results-chart').getContext('2d');
+            const langKey = currentLanguage;
+            if (resultsChart) resultsChart.destroy();
+            resultsChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: dimensionsData.map(d => d['acronym_' + langKey]),
+                    datasets: [{
+                        label: currentEvaluation.details.title,
+                        data: data,
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(52, 152, 219, 1)'
+                    }]
+                },
+                options: {
+                    scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100, pointLabels: { font: { size: 12 } } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
         };
         
         const exportToPDF = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const T = translations[currentLanguage];
-            let y = 20;
-
-            doc.setFontSize(18);
-            doc.text(T.pdf_report_title, 105, y, { align: 'center' });
-            y += 10;
+            const reportContent = document.getElementById('report-content');
             
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text(`${T.pdf_book_evaluated}:`, 15, y);
-            doc.setFont(undefined, 'normal');
-            doc.text(bookTitle, 55, y);
-            y += 15;
+            html2canvas(reportContent, { scale: 2, windowWidth: reportContent.scrollWidth, windowHeight: reportContent.scrollHeight }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                let heightLeft = imgHeight;
+                let position = 0;
 
-            const checkY = () => { if (y > 280) { doc.addPage(); y = 20; } };
-            
-            questionsData.forEach((q, i) => {
-                const ans = answers[i];
-                checkY();
-                doc.setFont(undefined, 'bold');
-                doc.text(`${T.pdf_criterion} ${q.id}: ${q[currentLanguage].title} ${q.essential ? '(*)' : ''}`, 15, y);
-                y += 7;
-                
-                doc.setFont(undefined, 'normal');
-                checkY();
-                doc.text(`${T.pdf_answer}: ${ans.answer === 'yes' ? T.yes : T.no}`, 20, y);
-                y += 7;
-                
-                checkY();
-                doc.text(`${T.pdf_observations}:`, 20, y);
-                const obsText = doc.splitTextToSize(ans.observation || '-', 165);
-                doc.text(obsText, 25, y + 5);
-                y += (obsText.length * 5) + 8;
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdf.internal.pageSize.getHeight();
+
+                while (heightLeft > 0) {
+                  position = heightLeft - imgHeight;
+                  pdf.addPage();
+                  pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                  heightLeft -= pdf.internal.pageSize.getHeight();
+                }
+                pdf.save(`${currentEvaluation.details.title.replace(/ /g, '_')}_evaluation.pdf`);
             });
-            
-            checkY();
-            doc.setFontSize(16);
-            doc.text(T.pdf_final_result, 105, y, { align: 'center' });
-            y += 10;
-            
-            const scoreText = document.getElementById('score-display').textContent;
-            const recHTML = document.getElementById('recommendation').innerHTML;
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = recHTML;
-            const recText = tempDiv.innerText;
-            
-            checkY();
-            doc.setFontSize(12);
-            doc.text(`${T.score_title}: ${scoreText}`, 15, y);
-            y += 7;
-            
-            checkY();
-            doc.text(`${T.pdf_recommendation}:`, 15, y);
-            const recLines = doc.splitTextToSize(recText, 170);
-            doc.text(recLines, 20, y + 5);
-            
-            doc.save(`${bookTitle.replace(/ /g, '_')}_evaluation.pdf`);
-        };
-        
-        const resetEvaluation = () => {
-            currentQuestionIndex = 0;
-            bookTitle = '';
-            bookTitleInput.value = '';
-            answers = new Array(questionsData.length).fill(null).map(() => ({ answer: null, observation: '' }));
-            navigateToScreen('setup-screen');
         };
 
         // --- EVENT LISTENERS ---
-        startBtn.addEventListener('click', startEvaluation);
+        document.getElementById('header-title').addEventListener('click', () => navigateTo('home-screen'));
+        document.getElementById('home-start-btn').addEventListener('click', () => navigateTo('setup-screen'));
+        setupForm.addEventListener('submit', (e) => { e.preventDefault(); startNewEvaluation(); });
         prevBtn.addEventListener('click', () => handleNavigation('prev'));
         nextBtn.addEventListener('click', () => handleNavigation('next'));
-        resetBtn.addEventListener('click', resetEvaluation);
-        exportPdfBtn.addEventListener('click', exportToPDF);
-        langPtBtn.addEventListener('click', () => switchLanguage('pt'));
-        langEnBtn.addEventListener('click', () => switchLanguage('en'));
+        document.getElementById('new-eval-btn').addEventListener('click', () => navigateTo('setup-screen'));
+        document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+        document.getElementById('lang-pt').addEventListener('click', () => switchLanguage('pt'));
+        document.getElementById('lang-en').addEventListener('click', () => switchLanguage('en'));
         
-        document.addEventListener('change', (e) => {
-            if (e.target.matches('input[name="answer"]')) {
-                saveCurrentAnswer();
-            }
-        });
-
         // --- INITIALIZATION ---
         updateUIStrings();
+        navigateTo('home-screen');
     });
     </script>
 </body>
