@@ -201,7 +201,7 @@
                     </div>
                     <div class="step">
                         <div class="step-number">2</div>
-                        <p class="step-text" data-translate-key="home_step_2">Avalie os itens de cada dimensão usando a escala.</p>
+                        <p class="step-text" data-translate-key="home_step_2">Use o controle deslizante para dar uma nota de 1 (discordo) a 5 (concordo) para cada item.</p>
                     </div>
                     <div class="step">
                         <div class="step-number">3</div>
@@ -293,7 +293,7 @@
                 home_title: "Guia de Avaliação de Livros Didáticos de Inglês",
                 home_intro: "Uma ferramenta prática para professores, adaptada de um Trabalho de Conclusão de Curso (Letras-Inglês, IFB). Avalie materiais de forma criteriosa e fundamentada na Abordagem Comunicativa e no QECR.",
                 home_start_btn: "Iniciar Avaliação", home_how_to_use: "Como Usar",
-                home_step_1: "Preencha os detalhes do livro e o contexto de ensino.", home_step_2: "Avalie os itens de cada dimensão usando a escala.", home_step_3: "Analise os resultados e a recomendação final.", home_step_4: "Exporte o relatório detalhado em PDF, se desejar.",
+                home_step_1: "Preencha os detalhes do livro e o contexto de ensino.", home_step_2: "Use o controle deslizante para dar uma nota de 1 (discordo) a 5 (concordo) para cada item.", home_step_3: "Analise os resultados e a recomendação final.", home_step_4: "Exporte o relatório detalhado em PDF, se desejar.",
                 thesis_institution: "Instituto Federal de Brasília",
                 thesis_campus_course: "Campus Riacho Fundo - Licenciatura em Letras Inglês",
                 thesis_author: "João Vicente Saliba de Andrade",
@@ -305,7 +305,6 @@
                 prev_btn: "Anterior", next_btn: "Próximo", finish_btn: "Ver Resultados",
                 results_title: "Resultados da Avaliação", total_score: "Pontuação Geral", export_btn: "Exportar PDF",
                 progress_text: "Dimensão {current} de {total}",
-                likert_1: "Discordo", likert_5: "Concordo",
                 observations_title: "Observações por Dimensão",
                 observation_label: "Observações sobre esta Dimensão:",
                 alert_mandatory: "Por favor, avalie todos os itens antes de prosseguir.",
@@ -322,7 +321,7 @@
                 home_title: "English Textbook Evaluation Guide",
                 home_intro: "A practical tool for teachers, adapted from a Graduation Thesis (English Major, IFB). Evaluate materials critically, based on the Communicative Approach and the CEFR.",
                 home_start_btn: "Start Evaluation", home_how_to_use: "How to Use",
-                home_step_1: "Fill in the book details and teaching context.", home_step_2: "Rate the items in each dimension using the scale.", home_step_3: "Analyze the score, chart, and final recommendation.", home_step_4: "Export the detailed report to PDF if you wish.",
+                home_step_1: "Fill in the book details and teaching context.", home_step_2: "Use the slider to rate each item from 1 (disagree) to 5 (agree).", home_step_3: "Analyze the score, chart, and final recommendation.", home_step_4: "Export the detailed report to PDF if you wish.",
                 thesis_institution: "Federal Institute of Brasília",
                 thesis_campus_course: "Riacho Fundo Campus - Bachelor's Degree in English Language Arts",
                 thesis_author: "João Vicente Saliba de Andrade",
@@ -334,7 +333,6 @@
                 prev_btn: "Previous", next_btn: "Next", finish_btn: "See Results",
                 results_title: "Evaluation Results", total_score: "Overall Score", export_btn: "Export PDF",
                 progress_text: "Dimension {current} of {total}",
-                likert_1: "Disagree", likert_5: "Agree",
                 observations_title: "Observations per Dimension",
                 observation_label: "Observations on this Dimension:",
                 alert_mandatory: "Please rate all items before proceeding.",
@@ -534,7 +532,6 @@
                         <div class="checklist-item">
                             <p>${item[langKey]}</p>
                             <div class="rating-area">
-                                <span>${translations[langKey].likert_1}</span>
                                 <input type="range" min="1" max="5" value="${rating > 0 ? rating : 3}" class="likert-slider" data-crit-index="${critIndex}" data-item-index="${itemIndex}" oninput="this.nextElementSibling.textContent = this.value">
                                 <span class="rating-value">${rating > 0 ? rating : ''}</span>
                             </div>
@@ -571,11 +568,34 @@
             sliders.forEach(slider => {
                 const { critIndex, itemIndex } = slider.dataset;
                 const value = parseInt(slider.value);
-                currentEvaluation.answers[currentDimensionIndex][parseInt(critIndex)][parseInt(itemIndex)] = value;
-                // Since slider has a default value, we check if it was interacted with. A bit tricky without more state.
-                // A simple check is to ensure no value is left at the initial state if we consider that an invalid "choice".
-                // For now, we assume any value is a choice. A better validation would be needed for true "mandatory" feel.
+                if(currentEvaluation.answers[currentDimensionIndex][parseInt(critIndex)][parseInt(itemIndex)] === 0){
+                    // Only update if it was not previously answered
+                     currentEvaluation.answers[currentDimensionIndex][parseInt(critIndex)][parseInt(itemIndex)] = value;
+                }
+                if (value === 0) { // Check if any remains unanswered
+                    allAnswered = false;
+                }
             });
+
+            // Save the current state from the UI
+             sliders.forEach(slider => {
+                const { critIndex, itemIndex } = slider.dataset;
+                const value = parseInt(slider.value);
+                currentEvaluation.answers[currentDimensionIndex][parseInt(critIndex)][parseInt(itemIndex)] = value;
+            });
+
+            // Re-check if all are answered after saving
+            allAnswered = true;
+            currentEvaluation.answers[currentDimensionIndex].flat().forEach(rating => {
+                if (rating === 0) {
+                    allAnswered = false;
+                }
+            });
+
+            if (!allAnswered && direction === 'next') {
+                alert(translations[currentLanguage].alert_mandatory);
+                return;
+            }
             
             currentEvaluation.observations[currentDimensionIndex] = document.getElementById('observation-textarea').value;
 
@@ -699,7 +719,7 @@
                     y = margin;
                 }
             };
-
+            
             // --- Header ---
             doc.setFontSize(16).setFont(undefined, 'bold');
             doc.text(translations[currentLanguage].pdf_report_title, pageWidth / 2, y, { align: 'center' });
@@ -744,6 +764,7 @@
                     y += obsLines.length * 5 + 5;
                 }
             });
+
 
             doc.save(`${currentEvaluation.details.title.replace(/ /g, '_')}_evaluation.pdf`);
         };
