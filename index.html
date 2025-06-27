@@ -139,6 +139,25 @@
         /* --- TELA DE RESULTADOS --- */
         #results-screen h2 { text-align: center; color: var(--secondary-color); margin-bottom: 20px; }
         #book-title-result { text-align: center; font-weight: bold; font-size: 1.2em; color: var(--primary-color); margin-bottom: 20px; }
+        #details-summary {
+            background-color: var(--light-gray);
+            border-left: 5px solid var(--accent-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            grid-column: 1 / -1;
+        }
+        #details-summary h3 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        #details-summary .detail-item {
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        #details-summary .detail-item strong {
+            color: var(--primary-color);
+        }
         .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: flex-start; }
         #chart-container { max-width: 400px; margin: 0 auto; }
         .scores-container .result-box { padding: 15px; border-radius: 8px; margin-bottom: 10px; }
@@ -264,6 +283,7 @@
             <div class="screen-content" id="report-content">
                 <h2 data-translate-key="results_title">Resultados da Avaliação</h2>
                 <p id="book-title-result"></p>
+                <div id="details-summary"></div>
                 <div class="results-grid">
                     <div id="chart-container"><canvas id="results-chart"></canvas></div>
                     <div class="scores-container" id="scores-container">
@@ -687,6 +707,29 @@
         const showResults = () => {
             navigateTo('results-screen');
             document.getElementById('book-title-result').textContent = currentEvaluation.details.title;
+            
+            // Preencher detalhes do livro e contexto
+            const detailsContainer = document.getElementById('details-summary');
+            const details = currentEvaluation.details;
+            const lang = currentLanguage;
+            let detailsHTML = `<h3 data-translate-key="book_details_title">${translations[lang].book_details_title}</h3>`;
+            
+            const addDetailRow = (labelKey, value) => {
+                if (value && String(value).trim() !== '') {
+                    const labelText = translations[lang][labelKey] ? translations[lang][labelKey] : labelKey;
+                    detailsHTML += `<div class="detail-item"><strong>${labelText}:</strong> ${String(value).replace(/\n/g, '<br>')}</div>`;
+                }
+            };
+            
+            addDetailRow('book_author', details.author);
+            addDetailRow('book_publisher', details.publisher);
+            addDetailRow('book_year', details.year);
+            
+            detailsHTML += `<h3 data-translate-key="context_details_title" style="margin-top: 15px;">${translations[lang].context_details_title}</h3>`;
+            addDetailRow('course_type', details.courseType);
+            addDetailRow('student_profile', details.studentProfile);
+
+            detailsContainer.innerHTML = detailsHTML;
 
             let essentialFail = false;
             let totalScore = 0;
@@ -833,7 +876,40 @@
 
             // --- Construção do PDF ---
 
-            // 1. Título do Relatório
+            // 1. Cabeçalho da Tese
+            checkAndAddPage(50); 
+            doc.setFont('Helvetica', 'bold').setFontSize(10).setTextColor(primaryColor);
+            doc.text(translations[currentLanguage].thesis_institution, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += 5;
+
+            doc.setFont('Helvetica', 'normal').setFontSize(9).setTextColor(secondaryColor);
+            doc.text(translations[currentLanguage].thesis_campus_course, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += 8;
+
+            doc.setFont('Helvetica', 'bold').setFontSize(11).setTextColor(primaryColor);
+            doc.text(translations[currentLanguage].thesis_author, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += 8;
+
+            doc.setFont('Helvetica', 'bold').setFontSize(10).setTextColor(secondaryColor);
+            const titleLines = doc.splitTextToSize(translations[currentLanguage].thesis_title, usableWidth - 20);
+            doc.text(titleLines, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += titleLines.length * 5;
+
+            doc.setFont('Helvetica', 'normal').setFontSize(10).setTextColor(secondaryColor);
+            const subtitleLines = doc.splitTextToSize(translations[currentLanguage].thesis_subtitle, usableWidth - 20);
+            doc.text(subtitleLines, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += subtitleLines.length * 5 + 4;
+
+            doc.setFont('Helvetica', 'normal').setFontSize(8).setTextColor(textColor);
+            const advisorLines = doc.splitTextToSize(translations[currentLanguage].thesis_advisor_info, usableWidth - 10);
+            doc.text(advisorLines, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            y += advisorLines.length * 4 + 10;
+            
+            doc.setDrawColor(lightGray);
+            doc.line(margin, y, usableWidth + margin, y); // Separator line
+            y += 10;
+
+            // 2. Título do Relatório
             doc.setFont('Helvetica', 'bold');
             doc.setFontSize(20);
             doc.setTextColor(primaryColor);
@@ -845,7 +921,46 @@
             doc.text(currentEvaluation.details.title, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
             y += 15;
             
-            // 2. Seção de Recomendação Final
+            // 2.5. Seção de Detalhes da Avaliação
+            checkAndAddPage(45); 
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(primaryColor);
+            doc.text("Detalhes da Avaliação", margin, y);
+            y += 7;
+
+            doc.setDrawColor(lightGray);
+            doc.line(margin, y, usableWidth + margin, y);
+            y += 8;
+
+            const details = currentEvaluation.details;
+            const lang = currentLanguage;
+
+            const addDetailRow = (labelKey, value) => {
+                if (value && String(value).trim() !== '') {
+                    checkAndAddPage(10);
+                    doc.setFont('Helvetica', 'bold').setFontSize(10).setTextColor(secondaryColor);
+                    
+                    const labelText = translations[lang][labelKey] ? translations[lang][labelKey] + ":" : labelKey + ":";
+                    doc.text(labelText, margin, y);
+
+                    doc.setFont('Helvetica', 'normal').setTextColor(textColor);
+                    const valueLines = doc.splitTextToSize(String(value), usableWidth - 45);
+                    doc.text(valueLines, margin + 42, y);
+                    y += (valueLines.length * 5) + 3;
+                }
+            };
+
+            addDetailRow('book_author', details.author);
+            addDetailRow('book_publisher', details.publisher);
+            addDetailRow('book_year', details.year);
+            y += 4; 
+
+            addDetailRow('course_type', details.courseType);
+            addDetailRow('student_profile', details.studentProfile);
+            y += 10; 
+
+            // 3. Seção de Recomendação Final
             checkAndAddPage(40);
             doc.setFont('Helvetica', 'bold');
             doc.setFontSize(12);
@@ -878,12 +993,11 @@
             doc.text(recLines, margin, y);
             y += recLines.length * 5 + 12;
 
-            // 3. Gráfico Radar e Pontuações (Agora com renderização off-screen)
+            // 4. Gráfico Radar e Pontuações
             checkAndAddPage(105);
 
-            // Criar canvas off-screen para renderização em alta resolução
             const offscreenCanvas = document.createElement('canvas');
-            const canvasSize = 1000; // Resolução fixa alta para o canvas
+            const canvasSize = 1000;
             offscreenCanvas.width = canvasSize;
             offscreenCanvas.height = canvasSize;
             const offscreenCtx = offscreenCanvas.getContext('2d');
@@ -901,7 +1015,6 @@
                  return { title: dim[currentLanguage], acronym: dim['acronym_' + currentLanguage], percentage: Math.round(dimMaxScore > 0 ? (dimScore / dimMaxScore) * 100 : 0) };
             });
 
-            // Plugin para desenhar fundo branco no gráfico
             const canvasBKG = {
               id: 'customCanvasBackgroundColor',
               beforeDraw: (chart, args, options) => {
@@ -914,7 +1027,6 @@
               }
             };
             
-            // Criar uma instância de gráfico temporária no canvas off-screen
             const tempChart = new Chart(offscreenCtx, {
                 type: 'radar',
                 data: {
@@ -929,15 +1041,15 @@
                     }]
                 },
                 options: {
-                    responsive: false, // crucial para usar tamanho fixo
-                    animation: false, // não precisa de animação para imagem estática
-                    devicePixelRatio: 4, // renderiza em resolução 4x
+                    responsive: false,
+                    animation: false,
+                    devicePixelRatio: 4,
                     scales: { 
                         r: { 
                             angleLines: { display: true }, 
                             suggestedMin: 0, 
                             suggestedMax: 100, 
-                            pointLabels: { font: { size: 24 } } // Fonte maior para alta resolução
+                            pointLabels: { font: { size: 24 } }
                         } 
                     },
                     plugins: { 
@@ -950,9 +1062,8 @@
                 plugins: [canvasBKG]
             });
             
-            // Obter a imagem do gráfico temporário
             const chartImg = tempChart.toBase64Image('image/png', 1.0);
-            tempChart.destroy(); // Limpar a instância do gráfico temporário
+            tempChart.destroy();
 
             const chartPDFSize = 80;
             const scoresX = margin + chartPDFSize + 10;
@@ -984,7 +1095,7 @@
             });
             y += chartPDFSize + 10;
 
-            // 4. Observações por Dimensão
+            // 5. Observações por Dimensão
             checkAndAddPage(15);
             doc.setFontSize(12).setFont('Helvetica', 'bold').setTextColor(primaryColor);
             doc.text(translations[currentLanguage].observations_title, margin, y);
